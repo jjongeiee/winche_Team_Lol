@@ -1,0 +1,3107 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <title>내전 팀 밸런싱</title>
+  <style>
+/* =============================================
+   내전 팀 밸런싱 - 통합 최적화 스타일시트
+   ============================================= */
+
+/* CSS Variables */
+:root {
+  --bg: #0b0f14; --panel: #0f1520; --card: #121a26; --card2: #0f1724;
+  --text: #e7eef8; --muted: #9fb0c3; --line: #1f2a3a;
+  --accent: #4da3ff; --danger: #ff5b5b; --ok: #43d17a;
+  
+  --tier-celestial: #4da3ff; --tier-celestial-bg: rgba(77,163,255,0.08); --tier-celestial-border: rgba(77,163,255,0.45);
+  --tier-middle: #43d17a; --tier-middle-bg: rgba(67,209,122,0.08); --tier-middle-border: rgba(67,209,122,0.45);
+  --tier-underground: #ff4fa3; --tier-underground-bg: rgba(255,79,163,0.08); --tier-underground-border: rgba(255,79,163,0.45);
+  
+  --pos-top: #8b5cf6; --pos-jug: #ef4444; --pos-mid: #3b82f6; --pos-adc: #f59e0b; --pos-sup: #10b981; --pos-all: #64748b;
+  
+  --spacing-xs: 4px; --spacing-sm: 6px; --spacing-md: 10px; --spacing-lg: 12px; --spacing-xl: 14px;
+  --radius-sm: 6px; --radius-md: 12px; --radius-lg: 14px; --radius-full: 999px;
+  --transition-fast: 0.2s ease;
+  --mmr-final: rgba(231,238,248,0.92);
+}
+
+/* Reset & Base */
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+
+/* Layout */
+.app {
+  display: grid;
+  grid-template-columns: 1fr 3fr 1.25fr;
+  gap: var(--spacing-lg);
+  padding: var(--spacing-lg);
+  height: 100vh;
+  transition: grid-template-columns 0.3s ease;
+}
+.app.leftCollapsed { grid-template-columns: 50px 3fr 1.25fr; }
+
+.panel {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+  transition: all 0.3s ease;
+}
+.panel.collapsed { overflow: visible; }
+.panel.collapsed .panelContent { display: none; }
+
+.panelContent {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.panelContent .list, .list {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: var(--spacing-md) var(--spacing-md) var(--spacing-lg);
+}
+
+/* Collapse Button */
+.collapseBtn {
+  position: absolute; top: 12px; right: 12px;
+  width: 36px; height: 72px;
+  border: 1.5px solid var(--line);
+  background: linear-gradient(135deg, var(--card2), var(--card));
+  color: var(--muted);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  font-size: 11px; font-weight: 700;
+  transition: all 0.3s ease;
+  z-index: 10;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.2);
+}
+.collapseBtn:hover {
+  border-color: var(--accent);
+  color: var(--text);
+  background: linear-gradient(135deg, rgba(77,163,255,0.15), rgba(77,163,255,0.25));
+  transform: translateX(-2px);
+  box-shadow: 0 4px 12px rgba(77,163,255,0.3);
+}
+.collapseBtn .icon { font-size: 22px; line-height: 1; font-weight: 900; letter-spacing: -0.5px; opacity: 0.9; }
+.collapseBtn .label { font-size: 9px; text-transform: uppercase; letter-spacing: 0.5px; opacity: 0.8; white-space: nowrap; }
+.panel.collapsed .collapseBtn { right: 9px; width: 32px; height: 120px; }
+.panel.collapsed .collapseBtn:hover { transform: translateX(2px); }
+
+.collapsedLabel {
+  display: none;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 14px; font-weight: 900; letter-spacing: 2px;
+  color: var(--muted);
+  padding: 20px 0;
+  text-align: center;
+}
+.panel.collapsed .collapsedLabel { display: block; margin: auto; }
+
+/* Headers */
+.panelHeader {
+  padding: var(--spacing-lg) var(--spacing-lg) var(--spacing-md);
+  border-bottom: 1px solid var(--line);
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-md);
+}
+.centerHeader { padding: var(--spacing-lg); }
+.centerBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+  min-height: 56px;
+}
+
+/* Brand */
+.brand {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+}
+.brandTop {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 20px !important;
+  font-weight: 900 !important;
+  color: var(--text) !important;
+  text-shadow: 0 0 6px rgba(77,163,255,0.25);
+  letter-spacing: -0.3px;
+  min-height: auto;
+}
+.brandMark {
+  width: 32px !important; height: 32px !important;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px !important; font-weight: 950;
+  color: var(--text);
+  border: 2px solid rgba(77,163,255,0.55) !important;
+  background: linear-gradient(135deg, rgba(77,163,255,0.16), rgba(77,163,255,0.22));
+  box-shadow: 0 0 10px rgba(77,163,255,0.20);
+  flex: 0 0 auto;
+}
+.brandName {
+  font-size: 20px !important; font-weight: 900;
+  background: linear-gradient(135deg, var(--accent), #5eb3ff);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.brandDot { opacity: 0.7; }
+.brandLine {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+  font-size: 20px; font-weight: 900;
+}
+.brandBottom { display: none !important; }
+
+.centerLeft { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+.centerTitle { font-size: 14px; font-weight: 800; letter-spacing: -0.2px; color: var(--text); line-height: 1.1; min-height: 16px; }
+.centerSub { font-size: 12px; color: var(--muted); min-height: 14px; font-weight: 500; }
+.centerRight { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+
+.titleRow { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-md); }
+.title { font-size: 15px; font-weight: 700; letter-spacing: -0.2px; }
+.meta { font-size: 12px; color: var(--muted); font-weight: 500; }
+
+/* Controls */
+.controls {
+  display: grid;
+  grid-template-columns: 1fr 160px;
+  gap: var(--spacing-md);
+  align-items: center;
+}
+.search {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: var(--spacing-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--card2);
+}
+.search .hint { color: var(--muted); font-size: 12px; }
+.search input {
+  width: 100%;
+  border: 0; outline: 0;
+  background: transparent;
+  color: var(--text);
+  font-size: 13px;
+}
+select {
+  width: 100%;
+  padding: var(--spacing-md);
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  background: var(--card2);
+  color: var(--text);
+  outline: 0;
+  font-size: 13px;
+}
+
+/* Common */
+.empty {
+  padding: var(--spacing-xl);
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  color: var(--muted);
+  font-size: 13px;
+  text-align: center;
+  margin-top: 8px;
+}
+
+/* Badges */
+.badge {
+  font-size: 14px !important; font-weight: 800 !important;
+  padding: 6px 14px !important;
+  border-radius: var(--radius-full);
+  background: linear-gradient(135deg, rgba(77,163,255,0.25), rgba(59,130,246,0.3));
+  border: 1.5px solid rgba(77,163,255,0.6) !important;
+  box-shadow: 0 2px 8px rgba(77,163,255,0.2);
+  color: var(--text) !important;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+#selectedBadge {
+  background: linear-gradient(135deg, rgba(77,163,255,0.3), rgba(59,130,246,0.35));
+  border-color: rgba(77,163,255,0.7) !important;
+}
+#attendMeta {
+  background: linear-gradient(135deg, rgba(67,209,122,0.25), rgba(16,185,129,0.3)) !important;
+  border-color: rgba(67,209,122,0.6) !important;
+}
+
+/* Buttons */
+.xbtn {
+  border: 1px solid var(--line);
+  background: rgba(255,255,255,0.02);
+  color: var(--muted);
+  padding: 8px 10px;
+  border-radius: 12px;
+  cursor: pointer;
+  font-size: 12px;
+  white-space: nowrap;
+  transition: transform .2s ease, border-color .2s ease, color .2s ease, background .2s ease, box-shadow .2s ease;
+  font-weight: 600;
+}
+.xbtn:hover {
+  border-color: #2a3a52;
+  color: var(--text);
+  transform: translateY(-1px);
+}
+.xbtn.primary {
+  background: linear-gradient(135deg, rgba(77,163,255,.18), rgba(77,163,255,.28));
+  border-color: rgba(77,163,255,.75);
+  color: var(--text);
+  font-weight: 800;
+  box-shadow: 0 0 0 1px rgba(77,163,255,.10) inset, 0 2px 10px rgba(0,0,0,.22);
+}
+.xbtn.primary:hover {
+  background: linear-gradient(135deg, rgba(77,163,255,.24), rgba(77,163,255,.36));
+  box-shadow: 0 0 0 1px rgba(77,163,255,.14) inset, 0 6px 18px rgba(0,0,0,.28);
+  transform: translateY(-2px);
+}
+.xbtn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+
+#autoTeamBtn, #confirmTeamBtn, #selectCaptainBtn, #copyTeamsBtn {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+  padding: 10px 18px !important;
+}
+#autoTeamBtn.primary, #confirmTeamBtn.xbtn.primary {
+  background: linear-gradient(135deg, rgba(77,163,255,0.26), rgba(59,130,246,0.34));
+  border: 2px solid rgba(77,163,255,0.85) !important;
+  box-shadow: 0 0 0 1px rgba(77,163,255,0.10) inset, 0 4px 14px rgba(0,0,0,0.25);
+}
+#autoTeamBtn.primary:hover, #confirmTeamBtn.xbtn.primary:hover {
+  background: linear-gradient(135deg, rgba(77,163,255,0.32), rgba(59,130,246,0.42));
+  box-shadow: 0 0 0 1px rgba(77,163,255,0.14) inset, 0 6px 18px rgba(0,0,0,0.30);
+}
+#selectCaptainBtn {
+  background: linear-gradient(135deg, rgba(255,215,0,0.16), rgba(255,193,7,0.24));
+  border: 2px solid rgba(255,215,0,0.85) !important;
+  box-shadow: 0 0 0 1px rgba(255,215,0,0.10) inset, 0 4px 14px rgba(0,0,0,0.25);
+}
+#selectCaptainBtn:hover {
+  background: linear-gradient(135deg, rgba(255,215,0,0.22), rgba(255,193,7,0.30));
+  box-shadow: 0 0 0 1px rgba(255,215,0,0.14) inset, 0 6px 18px rgba(0,0,0,0.30);
+  transform: translateY(-2px);
+}
+#copyTeamsBtn {
+  background: linear-gradient(135deg, rgba(67,209,122,0.16), rgba(16,185,129,0.24));
+  border: 2px solid rgba(67,209,122,0.85) !important;
+  box-shadow: 0 0 0 1px rgba(67,209,122,0.10) inset, 0 4px 14px rgba(0,0,0,0.25);
+}
+#copyTeamsBtn:hover {
+  background: linear-gradient(135deg, rgba(67,209,122,0.22), rgba(16,185,129,0.30));
+  box-shadow: 0 0 0 1px rgba(67,209,122,0.14) inset, 0 6px 18px rgba(0,0,0,0.30);
+  transform: translateY(-2px);
+}
+
+/* Player Cards */
+.card {
+  border: 1px solid var(--line);
+  background: var(--card);
+  border-radius: var(--radius-lg);
+  padding: 8px;
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: var(--spacing-md);
+  margin-bottom: 8px;
+  cursor: pointer;
+  user-select: none;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+}
+.card:hover {
+  border-color: #2a3a52;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+.card.selected {
+  border: 2px solid var(--accent);
+  box-shadow: 0 0 0 1px rgba(77,163,255,0.18) inset;
+}
+.card.tier-celestial {
+  border-color: var(--tier-celestial-border);
+  background: linear-gradient(135deg, var(--card) 0%, var(--tier-celestial-bg) 100%);
+}
+.card.tier-middle {
+  border-color: var(--tier-middle-border);
+  background: linear-gradient(135deg, var(--card) 0%, var(--tier-middle-bg) 100%);
+}
+.card.tier-underground {
+  border-color: var(--tier-underground-border);
+  background: linear-gradient(135deg, var(--card) 0%, var(--tier-underground-bg) 100%);
+}
+
+.chk { display: flex; align-items: flex-start; padding-top: 2px; }
+.chk input { width: 18px; height: 18px; accent-color: var(--accent); cursor: pointer; }
+
+.row1 { display: flex; align-items: center; justify-content: space-between; gap: var(--spacing-md); }
+.nick { font-weight: 800; letter-spacing: -0.2px; font-size: 14px; line-height: 1.1; }
+.mmr { font-variant-numeric: tabular-nums; font-weight: 700; font-size: 13px; }
+
+.row2 {
+  margin-top: var(--spacing-xs);
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+/* Pills */
+.pill {
+  font-size: 11px;
+  padding: 3px 7px;
+  border-radius: var(--radius-full);
+  border: 1px solid var(--line);
+  color: var(--muted);
+  background: rgba(255,255,255,0.02);
+  white-space: nowrap;
+  font-weight: 600;
+}
+.pill.tier { font-weight: 700; }
+.pill.tier.cel { border-color: var(--tier-celestial-border); background: var(--tier-celestial-bg); color: var(--tier-celestial); }
+.pill.tier.mid { border-color: var(--tier-middle-border); background: var(--tier-middle-bg); color: var(--tier-middle); }
+.pill.tier.und { border-color: var(--tier-underground-border); background: var(--tier-underground-bg); color: var(--tier-underground); }
+
+/* Position Pills (Unified) */
+#playerList .pill[class*="pos-"] {
+  border-color: rgba(255,255,255,0.16) !important;
+  background: rgba(255,255,255,0.03) !important;
+  color: rgba(231,238,248,0.92) !important;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 45px;
+}
+#playerList .row2 .pill.pos-ALL { min-width: 0; padding-left: 7px; padding-right: 7px; }
+
+/* Right Panel */
+.attendListTitle {
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.03), rgba(255,255,255,0.01));
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-md);
+}
+.attendTitle { font-size: 14px; font-weight: 800; letter-spacing: -0.2px; color: var(--text); }
+.rightBody { padding: var(--spacing-md) var(--spacing-md) var(--spacing-lg); overflow: auto; min-height: 0; }
+
+/* Position Boxes */
+.posBox {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-md);
+  margin-bottom: var(--spacing-md);
+  background: rgba(255,255,255,0.015);
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+.posBox[data-pos="TOP"] { border-color: rgba(139,92,246,0.42); background: linear-gradient(135deg, rgba(255,255,255,0.015), rgba(139,92,246,0.04)); }
+.posBox[data-pos="JUG"] { border-color: rgba(239,68,68,0.42); background: linear-gradient(135deg, rgba(255,255,255,0.015), rgba(239,68,68,0.04)); }
+.posBox[data-pos="MID"] { border-color: rgba(59,130,246,0.42); background: linear-gradient(135deg, rgba(255,255,255,0.015), rgba(59,130,246,0.04)); }
+.posBox[data-pos="ADC"] { border-color: rgba(245,158,11,0.42); background: linear-gradient(135deg, rgba(255,255,255,0.015), rgba(245,158,11,0.04)); }
+.posBox[data-pos="SUP"] { border-color: rgba(16,185,129,0.42); background: linear-gradient(135deg, rgba(255,255,255,0.015), rgba(16,185,129,0.04)); }
+.posBox[data-pos="ALL"] { border-color: rgba(100,116,139,0.42); background: linear-gradient(135deg, rgba(255,255,255,0.015), rgba(100,116,139,0.04)); }
+
+.posBox[data-pos="TOP"] .posBoxTitle { color: var(--pos-top); }
+.posBox[data-pos="JUG"] .posBoxTitle { color: var(--pos-jug); }
+.posBox[data-pos="MID"] .posBoxTitle { color: var(--pos-mid); }
+.posBox[data-pos="ADC"] .posBoxTitle { color: var(--pos-adc); }
+.posBox[data-pos="SUP"] .posBoxTitle { color: var(--pos-sup); }
+.posBox[data-pos="ALL"] .posBoxTitle { color: var(--pos-all); }
+
+.posBox[data-pos="TOP"] .posBoxTitle::before { content:"🛡️"; }
+.posBox[data-pos="JUG"] .posBoxTitle::before { content:"🌿"; }
+.posBox[data-pos="MID"] .posBoxTitle::before { content:"⚡"; }
+.posBox[data-pos="ADC"] .posBoxTitle::before { content:"🏹"; }
+.posBox[data-pos="SUP"] .posBoxTitle::before { content:"🧿"; }
+.posBox[data-pos="ALL"] .posBoxTitle::before { content:"🧩"; }
+.posBox .posBoxTitle::before { font-size: 13px; line-height: 1; opacity: 0.95; }
+
+.posBoxTitle { font-weight: 800; }
+.posBoxHeader {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  margin-bottom: 10px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.posBoxTitle .countInline { font-size: inherit; font-weight: 700; color: var(--text); opacity: 0.95; }
+.posBoxCount { display: none !important; }
+.posBox.dragOver { border-color: var(--accent); box-shadow: 0 0 0 2px rgba(77,163,255,0.18) inset; }
+
+/* Mini Player Cards */
+.miniGrid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  min-height: 44px;
+}
+.miniP {
+  border: 1px solid var(--line);
+  border-radius: var(--radius-md);
+  padding: 8px 8px 8px 24px !important;
+  background: rgba(0,0,0,0.15);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--spacing-sm);
+  min-width: 0;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  cursor: grab;
+  position: relative;
+}
+.miniP:hover { transform: translateY(-1px); box-shadow: 0 2px 8px rgba(0,0,0,0.3); }
+.miniP:active { cursor: grabbing; }
+.miniP::before {
+  content: '⠿';
+  position: absolute;
+  left: 8px; top: 50%;
+  transform: translateY(-50%);
+  opacity: 0.4;
+  font-size: 14px;
+}
+.miniP.dragging { opacity: 0.55; }
+.miniP.offrole { border-color: rgba(77,163,255,0.55); background: rgba(77,163,255,0.06); }
+
+.miniNickRow { display: flex; align-items: baseline; gap: 6px; min-width: 0; }
+.miniNick2 {
+  font-size: 12px; font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  min-width: 0;
+}
+.miniSubPos { font-size: 10px; font-weight: 500; color: var(--muted); opacity: 0.75; white-space: nowrap; flex: 0 0 auto; }
+.offBadge { display: none !important; }
+
+/* Team Table */
+.teamTable {
+  width: 100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size: 12px;
+  table-layout: fixed;
+}
+.teamTable col.col-team { width: 140px; }
+.teamTable col.col-slot { width: 120px; }
+.teamTable th, .teamTable td {
+  border: 1px solid var(--line);
+  padding: 6px;
+  text-align: center;
+  background: rgba(0,0,0,0.12);
+  overflow: hidden;
+}
+.teamTable th { font-weight: 700; background: rgba(255,255,255,0.04); color: var(--muted); }
+.teamTable td { font-weight: 800; }
+.teamTable td.empty {
+  font-weight: 600;
+  color: transparent;
+  position: relative;
+  background: rgba(255,255,255,0.03) !important;
+}
+.teamTable td.empty::after {
+  content: '';
+  position: absolute;
+  inset: 8px;
+  border: 2px dashed rgba(255,255,255,0.1);
+  border-radius: var(--radius-sm);
+}
+.teamTable thead th { padding-top: var(--spacing-md); padding-bottom: var(--spacing-lg); }
+.teamTable thead th[data-role="TOP"] { color: var(--pos-top); box-shadow: inset 0 -3px 0 rgba(139,92,246,0.9); }
+.teamTable thead th[data-role="JUG"] { color: var(--pos-jug); box-shadow: inset 0 -3px 0 rgba(239,68,68,0.9); }
+.teamTable thead th[data-role="MID"] { color: var(--pos-mid); box-shadow: inset 0 -3px 0 rgba(59,130,246,0.9); }
+.teamTable thead th[data-role="ADC"] { color: var(--pos-adc); box-shadow: inset 0 -3px 0 rgba(245,158,11,0.9); }
+.teamTable thead th[data-role="SUP"] { color: var(--pos-sup); box-shadow: inset 0 -3px 0 rgba(16,185,129,0.9); }
+.teamTable td[data-dropzone="slot"]:hover { background: rgba(77,163,255,0.08); }
+.teamTable td[data-dropzone="slot"] { cursor: pointer; }
+.teamTable td[draggable="true"][data-dropzone="slot"] { cursor: grab; user-select: none; }
+.teamTable td[draggable="true"][data-dropzone="slot"]:active { cursor: grabbing; }
+.teamTable td.dragging { cursor: grabbing; }
+.teamTable td.violate { background: rgba(255,91,91,0.12); border-color: rgba(255,91,91,0.6); }
+.teamTable td.violate .teamNick { color: #ffb4b4; }
+
+.teamHead {
+  display: grid;
+  grid-template-columns: 40% 60%;
+  align-items: center;
+  gap: 10px;
+}
+.teamNameBig {
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.4px;
+  text-align: left;
+  padding-left: 2px;
+  white-space: nowrap;
+}
+.teamStats { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+.teamAvgLine, .teamSdLine {
+  display: flex;
+  align-items: baseline;
+  gap: var(--spacing-sm);
+  justify-content: flex-start;
+  font-weight: 600;
+}
+.teamAvgLabel, .teamSdLabel { font-size: 11px; color: var(--muted); font-weight: 800; text-transform: lowercase; }
+.teamAvgValue {
+  font-size: 16px; font-weight: 900;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.teamAvgValue.avgGrad {
+  position: relative;
+  display: inline-block;
+  padding: 1px 8px;
+  border-radius: 999px;
+  color: var(--text);
+  font-weight: 950;
+  letter-spacing: -0.2px;
+  background: rgba(var(--avg-rgb), var(--avg-alpha));
+  border: 1px solid rgba(var(--avg-rgb), var(--avg-border-a));
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset, 0 6px 18px rgba(0,0,0,0.25);
+}
+.teamAvgValue.avgGrad::after {
+  content: "";
+  position: absolute;
+  inset: -6px -10px;
+  border-radius: 999px;
+  background: radial-gradient(closest-side, rgba(var(--avg-rgb), calc(var(--avg-alpha) * 0.55)), transparent 70%);
+  filter: blur(6px);
+  opacity: 0.9;
+  z-index: -1;
+}
+.teamSdValue { font-size: 13px; font-weight: 700; color: var(--text); opacity: 0.9; font-variant-numeric: tabular-nums; }
+
+.teamCell { display: flex; flex-direction: column; gap: 1px; }
+.teamNick {
+  font-weight: 900;
+  font-size: 14px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.0;
+}
+.teamNick.tier-cel { color: var(--tier-celestial); font-weight: 900; }
+.teamNick.tier-mid { color: var(--tier-middle); font-weight: 900; }
+.teamNick.tier-und { color: var(--tier-underground); font-weight: 900; }
+
+.teamNums { display: flex; flex-direction: column; gap: 1px; margin-top: 2px; }
+.teamBase { font-size: 11px; font-weight: 500; color: var(--muted); opacity: 0.75; font-variant-numeric: tabular-nums; line-height: 1.0; }
+.teamCorr { font-size: 14px; font-weight: 800; color: var(--mmr-final); font-variant-numeric: tabular-nums; letter-spacing: -0.2px; line-height: 1.0; }
+.teamCell.offrole { border: 1px dashed var(--accent); border-radius: var(--radius-sm); padding: var(--spacing-xs); }
+
+/* Status Meta */
+.meta.status {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 10px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+  font-weight: 600;
+}
+.meta.status::before { content: "ℹ"; font-size: 12px; line-height: 1; opacity: 0.9; }
+.meta.status.ok { border-color: rgba(67,209,122,0.25); background: rgba(67,209,122,0.08); color: rgba(231,238,248,0.95); }
+.meta.status.ok::before { content:"✓"; }
+.meta.status.warn { border-color: rgba(245,158,11,0.25); background: rgba(245,158,11,0.08); color: rgba(231,238,248,0.95); }
+.meta.status.warn::before { content:"!"; }
+.meta.status.error { border-color: rgba(255,91,91,0.28); background: rgba(255,91,91,0.08); color: rgba(231,238,248,0.95); }
+.meta.status.error::before { content:"×"; }
+
+/* Toast */
+.toast {
+  position: fixed;
+  bottom: 30px; left: 50%;
+  transform: translateX(-50%) translateY(100px);
+  color: var(--text);
+  padding: 12px 24px;
+  border-radius: var(--radius-lg);
+  font-size: 14px; font-weight: 700;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,255,255,0.1) inset;
+  z-index: 1000;
+  opacity: 0;
+  transition: all 0.3s ease;
+  --toast-a: rgba(77,163,255,0.92);
+  --toast-b: rgba(59,130,246,0.92);
+  background: linear-gradient(135deg, var(--toast-a), var(--toast-b));
+  border: 1px solid rgba(255,255,255,0.12);
+}
+.toast.info { --toast-a: rgba(77,163,255,0.92); --toast-b: rgba(59,130,246,0.92); }
+.toast.success { --toast-a: rgba(67,209,122,0.92); --toast-b: rgba(16,185,129,0.92); }
+.toast.warn { --toast-a: rgba(245,158,11,0.92); --toast-b: rgba(217,119,6,0.92); }
+.toast.error { --toast-a: rgba(255,91,91,0.92); --toast-b: rgba(239,68,68,0.92); }
+.toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* Misc */
+#leftPanel .panelHeader .titleRow { padding-right: 56px; }
+
+/* Responsive */
+@media (max-width: 1200px) {
+  .app { grid-template-columns: 1fr 2fr 1fr; }
+  .app.leftCollapsed { grid-template-columns: 50px 2fr 1fr; }
+}
+@media (max-width: 900px) {
+  .app {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr auto;
+    height: auto;
+    min-height: 100vh;
+  }
+  .panel { max-height: 50vh; }
+}
+
+/* Undo/Redo icon buttons (top-right) */
+.iconBtn{
+  width: 40px;
+  height: 40px;
+  padding: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 12px;
+  font-size: 16px;
+  font-weight: 900;
+  line-height: 1;
+}
+.iconBtn:disabled{
+  opacity: 0.35;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* =============================================
+   Team Fortune UI
+   ============================================= */
+#fortuneArea{
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  display: none; /* 기본 숨김 */
+}
+
+.fortuneHead{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+.fortuneTitle{
+  font-size: 13px;
+  font-weight: 900;
+  letter-spacing: -0.2px;
+  color: var(--text);
+}
+.fortuneHint{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 600;
+}
+
+.fortuneGrid{
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+
+.fortuneBtn{
+  width: 100%;
+  justify-content: center;
+  font-weight: 900;
+  padding: 10px 10px;
+}
+
+.fortuneCard{
+  border: 1px solid var(--line);
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+  padding: 10px 10px;
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+
+.fortuneTopRow{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.fortuneTeamName{
+  font-size: 13px;
+  font-weight: 950;
+  letter-spacing: -0.2px;
+  white-space: nowrap;
+}
+
+.fortuneGrade{
+  font-size: 11px;
+  font-weight: 900;
+  padding: 4px 8px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(231,238,248,0.92);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.fortuneLine{
+  font-size: 12px;
+  font-weight: 700;
+  color: rgba(231,238,248,0.94);
+  line-height: 1.25;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+}
+.fortuneLine.muted{
+  color: rgba(159,176,195,0.95);
+  font-weight: 600;
+}
+/* =============================================
+   Confetti (Fortune Complete)
+   ============================================= */
+.confettiLayer{
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 3000; /* fortuneModal(2000)보다 위 */
+}
+
+.confettiPiece{
+  position: absolute;
+  width: 8px;
+  height: 12px;
+  border-radius: 3px;
+  opacity: 0;
+  transform: translate3d(0,0,0) rotate(0deg);
+  will-change: transform, opacity;
+  filter: drop-shadow(0 2px 6px rgba(0,0,0,0.35));
+  animation: confettiFly var(--dur) cubic-bezier(.12,.74,.18,1) forwards;
+}
+
+@keyframes confettiFly{
+  0%{
+    opacity: 0;
+    transform: translate3d(var(--x0), var(--y0), 0) rotate(var(--r0));
+  }
+  8%{
+    opacity: 1;
+  }
+  100%{
+    opacity: 0;
+    transform: translate3d(var(--x1), var(--y1), 0) rotate(var(--r1));
+  }
+}
+
+
+/* =============================================
+   Fortune Reveal Modal (Popup + Roulette)
+   ============================================= */
+.fortuneModal{
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: none;
+}
+.fortuneModal.show{ display:block; }
+
+.fortuneOverlay{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+}
+
+.fortunePop{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%, -50%) scale(0.96);
+
+  /* ✅ 팝업 크기 키움 */
+  width: min(640px, calc(100vw - 28px));
+
+  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(135deg, rgba(18,26,38,0.96), rgba(15,23,36,0.96));
+  border-radius: 22px;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset;
+
+  /* ✅ 여백 키움 */
+  padding: 18px 18px 20px;
+
+  opacity: 0;
+  transition: opacity .22s ease, transform .22s ease;
+}
+.fortuneModal.show .fortunePop{
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.fortuneClose{
+  position:absolute;
+  right: 14px;
+  top: 14px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.fortunePopHead{
+  display:flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-right: 90px; /* close btn space */
+  margin-bottom: 14px;
+}
+
+.fortunePopTeam{
+  font-size: 18px;      /* ✅ 헤더 텍스트 키움 */
+  font-weight: 950;
+  letter-spacing: -0.2px;
+}
+
+.fortunePopGrade{
+  font-size: 13px;      /* ✅ 등급 텍스트 키움 */
+  font-weight: 900;
+  padding: 6px 12px;
+  border-radius: 999px;
+  border: 1px solid rgba(255,255,255,0.14);
+  background: rgba(255,255,255,0.04);
+  color: rgba(231,238,248,0.92);
+}
+
+
+.fortuneRoulette{
+  border: 1px solid rgba(255,255,255,0.10);
+  border-radius: 18px;
+  padding: 16px 14px;   /* ✅ 영역 키움 */
+  background: rgba(0,0,0,0.18);
+  display:flex;
+  flex-direction: column;
+  align-items:center;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.fortuneWheel{
+  width: 110px;         /* ✅ 룰렛 크기 키움 */
+  height: 110px;
+  border-radius: 999px;
+  border: 2px solid rgba(255,255,255,0.10);
+  background:
+    conic-gradient(from 0deg,
+      rgba(77,163,255,0.85),
+      rgba(67,209,122,0.85),
+      rgba(255,79,163,0.85),
+      rgba(77,163,255,0.85));
+  position: relative;
+  box-shadow: 0 12px 34px rgba(0,0,0,0.45);
+}
+
+.fortuneWheel::after{
+  content:"";
+  position:absolute;
+  inset: 12px;
+  border-radius: 999px;
+  background: radial-gradient(circle at 30% 25%, rgba(255,255,255,0.20), rgba(0,0,0,0.35));
+  border: 1px solid rgba(255,255,255,0.10);
+}
+
+.fortuneWheelText{
+  font-size: 13px;      /* ✅ 안내문 키움 */
+  font-weight: 900;
+  color: rgba(231,238,248,0.92);
+  opacity: 0.92;
+}
+
+/* spinning */
+@keyframes fortuneSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(1080deg); } /* 3 turns */
+}
+.fortuneWheel.spinning{
+  animation: fortuneSpin 1.15s cubic-bezier(.14,.78,.18,1) forwards;
+}
+
+/* results */
+.fortuneResult{
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 18px;
+  padding: 16px 14px;
+  background: rgba(255,255,255,0.02);
+
+  display:flex;
+  flex-direction: column;
+  gap: 12px;
+
+  text-align: center;
+  align-items: center;
+}
+
+/* ✅ 위/아래 문장 완전 동일 스타일 */
+.fortuneLineTop,
+.fortuneLineBottom{
+  width: 100%;
+  min-height: 28px;
+  line-height: 1.45;
+  word-break: keep-all;
+  overflow-wrap: anywhere;
+
+  font-size: 16px;
+  font-weight: 900;
+  color: rgba(231,238,248,0.94);
+  letter-spacing: -0.15px;
+
+  opacity: 0;
+  transform: translateY(10px);
+  transition: opacity .24s ease, transform .24s ease;
+}
+
+.fortuneLineTop.show,
+.fortuneLineBottom.show{
+  opacity: 1;
+  transform: translateY(0);
+}
+
+/* ✅ 운세 카드(박스)에서만 muted 무효화 */
+.fortuneCard .fortuneLine.muted{
+  color: rgba(231,238,248,0.94);
+  font-weight: 700;
+}
+
+
+
+  </style>
+</head>
+<body>
+  <div class="confettiLayer" id="confettiLayer" aria-hidden="true"></div>
+  <audio id="bgmAudio" preload="auto">
+    <source src="https://cdn.pixabay.com/download/audio/2022/03/10/audio_4a468280bb.mp3" type="audio/mpeg">
+  </audio>
+
+  <div class="app">
+    <section class="panel" id="leftPanel" aria-label="전체 명단">
+      <button class="collapseBtn" id="collapseLeftBtn" title="접기/펼치기">
+        <span class="icon" aria-hidden="true">‹</span>
+        <span class="label">접기</span>
+      </button>
+      <div class="collapsedLabel">전체 명단</div>
+      
+      <div class="panelContent">
+        <div class="panelHeader">
+          <div class="titleRow">
+            <div>
+              <div class="title">전체 명단</div>
+              <div class="meta status" id="metaLine">불러오는 중...</div>
+            </div>
+            <div class="badge" id="selectedBadge">참여 0명</div>
+          </div>
+
+          <div class="controls">
+            <div class="search">
+              <span class="hint">검색</span>
+              <input id="searchInput" type="text" placeholder="닉네임 입력" autocomplete="off" />
+            </div>
+            <select id="sortSelect" title="정렬">
+              <option value="mmr_desc">MMR 높은 순</option>
+              <option value="mmr_asc">MMR 낮은 순</option>
+              <option value="nick_asc">닉네임 A→Z</option>
+              <option value="nick_desc">닉네임 Z→A</option>
+            </select>
+          </div>
+        </div>
+        <div class="list" id="playerList"></div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="팀 밸런싱">
+      <div class="panelHeader centerHeader" aria-label="센터 툴바">
+        <div class="centerBar">
+          <div class="brand">
+            <div class="brandTop">
+              <span class="brandMark">W</span>
+              <span class="brandName">WinchesterClan</span>
+              <span class="brandDot">·</span>
+              <span class="brandLine">협곡 내전</span>
+            </div>
+          </div>
+          <div class="centerRight" id="centerActions">
+            <button id="syncBtn" class="xbtn" title="원본 시트에서 즉시 동기화">동기화 ⟳</button>
+            <button id="undoBtn" class="xbtn iconBtn" title="되돌리기 (Ctrl/Cmd+Z)" disabled>↩</button>
+            <button id="redoBtn" class="xbtn iconBtn" title="다시 실행 (Ctrl/Cmd+Y 또는 Ctrl/Cmd+Shift+Z)" disabled>↪</button>
+          </div>
+
+        </div>
+      </div>
+
+      <div class="list" style="display:flex; flex-direction:column; gap:12px;">
+        <div style="display:flex; align-items:center; gap:10px; flex-wrap: wrap;">
+          <button id="autoTeamBtn" class="xbtn" style="font-weight:900;">자동 팀짜기</button>
+          <button id="confirmTeamBtn" class="xbtn" style="display:none;">팀 확정 🎉</button>
+          <button id="selectCaptainBtn" class="xbtn" style="display:none;">팀장 뽑기 🎲</button>
+          <button id="copyTeamsBtn" class="xbtn" style="display:none;">클립보드에 복사 📋</button>
+          <button id="resultLinkBtn" class="xbtn" style="display:none;">결과 링크 🔗</button>
+          <div class="meta status" id="teamMetaLine">-</div>
+        </div>
+        <div id="teamBoard"></div>
+        <div class="posBox" id="spareZone" data-dropzone="spare">
+          <div class="posBoxHeader">
+            <div class="posBoxTitle">스페어</div>
+            <div class="posBoxCount" id="spareCount">0명</div>
+          </div>
+          <div class="miniGrid" id="spareList" style="grid-template-columns: repeat(4, minmax(0, 1fr));"></div>
+          <div class="meta" style="margin-top:8px;">팀에서 사람을 끌어와서 잠시 빼둘 수 있음 (드랍하면 팀 슬롯에서 제거)</div>
+          <div id="fortuneArea"></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" aria-label="참석자">
+      <div class="rightBody">
+        <div class="attendListTitle">
+          <div class="attendTitle">참석자 목록</div>
+          <div class="badge" id="attendMeta">0명</div>
+        </div>
+        <div class="meta" id="selectedHint" style="margin-bottom:8px; display:none;">선택된 참석자가 없음</div>
+        <div id="selectedList"></div>
+      </div>
+    </section>
+  </div>
+
+  <div class="toast" id="toast"></div>
+    <!-- =========================
+       Fortune Reveal Modal
+       ========================= -->
+  <div class="fortuneModal" id="fortuneModal" aria-hidden="true">
+    <div class="fortuneOverlay" data-close="1"></div>
+
+    <div class="fortunePop" role="dialog" aria-modal="true" aria-label="팀 운세">
+      <button class="fortuneClose xbtn" id="fortuneCloseBtn" title="닫기">닫기</button>
+
+      <div class="fortunePopHead">
+        <div class="fortunePopTeam" id="fortunePopTeam">-</div>
+        <div class="fortunePopGrade" id="fortunePopGrade">등급 -</div>
+      </div>
+
+      <div class="fortuneRoulette">
+        <div class="fortuneWheel" id="fortuneWheel"></div>
+        <div class="fortuneWheelText" id="fortuneWheelText">운세를 뽑는 중…</div>
+      </div>
+
+      <div class="fortuneResult">
+        <div class="fortuneLineTop" id="fortuneTopLine"></div>
+        <div class="fortuneLineBottom" id="fortuneBottomLine"></div>
+      </div>
+    </div>
+  </div>
+
+  <div id="ytBgm" style="position:fixed; left:-9999px; top:-9999px; width:1px; height:1px; opacity:0;"></div>
+  <script src="https://www.youtube.com/iframe_api"></script>
+
+  <script>
+'use strict';
+
+/* =============================================
+   CONFIG & CONSTANTS
+   ============================================= */
+const CONFIG = {
+  ROLES: ['TOP', 'JUG', 'MID', 'ADC', 'SUP'],
+  ROLE_NAMES: { ALL: '올라운더', TOP: '탑', JUG: '정글', MID: '미드', ADC: '원딜', SUP: '서포터' },
+  POSITION_ORDER: ['ALL', 'TOP', 'JUG', 'MID', 'ADC', 'SUP'],
+  TIER: { CELESTIAL_MIN: 630, UNDERGROUND_MAX: 280 },
+  TIER_NAMES: { CELESTIAL: '천상계', MIDDLE: '중간계', UNDERGROUND: '지하계' },
+  MMR_PENALTY: { CELESTIAL: 30, MIDDLE: 50, SUPPORT: 100 },
+  UI: { SEARCH_DEBOUNCE_MS: 250 },
+  BGM_YT_VIDEO_ID: 'MJzqr9qdopQ'
+};
+
+const TEAM_RULES = [
+  {
+    id: 'no-double-underground-mid-adc',
+    name: '미드/원딜 동시 지하계 금지',
+    check: (team, getPlayer, getTier) => {
+      const mid = getPlayer(team.slots.MID?.nick);
+      const adc = getPlayer(team.slots.ADC?.nick);
+      if (!mid || !adc) return { ok: true };
+      if (getTier(mid) === CONFIG.TIER_NAMES.UNDERGROUND && getTier(adc) === CONFIG.TIER_NAMES.UNDERGROUND) {
+        return { ok: false, badRoles: ['MID', 'ADC'] };
+      }
+      return { ok: true };
+    }
+  },
+  {
+    id: 'no-double-underground-mid-jug',
+    name: '미드/정글 동시 지하계 금지',
+    check: (team, getPlayer, getTier) => {
+      const mid = getPlayer(team.slots.MID?.nick);
+      const jug = getPlayer(team.slots.JUG?.nick);
+      if (!mid || !jug) return { ok: true };
+      if (getTier(mid) === CONFIG.TIER_NAMES.UNDERGROUND && getTier(jug) === CONFIG.TIER_NAMES.UNDERGROUND) {
+        return { ok: false, badRoles: ['MID', 'JUG'] };
+      }
+      return { ok: true };
+    }
+  }
+];
+
+/* =============================================
+   UTILITIES
+   ============================================= */
+const Utils = {
+  escape: (s) => String(s).replaceAll('&','&amp;').replaceAll('<','&lt;').replaceAll('>','&gt;').replaceAll('"','&quot;').replaceAll("'",'&#39;'),
+  
+  debounce: (fn, delay) => {
+    let timer = null;
+    const debounced = (...args) => {
+      if (timer) clearTimeout(timer);
+      timer = setTimeout(() => {
+        timer = null;
+        fn(...args);
+      }, delay);
+    };
+    debounced.cancel = () => {
+      if (timer) clearTimeout(timer);
+      timer = null;
+    };
+    return debounced;
+  },
+
+  
+  normalizePos: (pos) => {
+    const v = String(pos || '').toUpperCase();
+    return ['TOP','JUG','MID','ADC','SUP','ALL'].includes(v) ? v : 'ALL';
+  },
+  
+  tierClass: (t) => {
+    if (t === CONFIG.TIER_NAMES.CELESTIAL) return 'cel';
+    if (t === CONFIG.TIER_NAMES.UNDERGROUND) return 'und';
+    return 'mid';
+  },
+  
+  tierCardClass: (t) => {
+    if (t === CONFIG.TIER_NAMES.CELESTIAL) return 'tier-celestial';
+    if (t === CONFIG.TIER_NAMES.UNDERGROUND) return 'tier-underground';
+    return 'tier-middle';
+  },
+  
+  setStatusClass: (el, type) => {
+    if (!el) return;
+    el.classList.remove('ok','warn','error');
+    if (type) el.classList.add(type);
+  },
+  
+  hexToRgb: (hex) => {
+    const m = String(hex || '').trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+    if (!m) return null;
+    let s = m[1];
+    if (s.length === 3) s = s.split('').map(ch => ch + ch).join('');
+    const n = parseInt(s, 16);
+    return { r: (n >> 16) & 255, g: (n >> 8) & 255, b: n & 255 };
+  },
+  
+  lerp: (a, b, t) => a + (b - a) * t,
+  
+  lerpRgb: (c1, c2, t) => ({
+    r: Math.round(Utils.lerp(c1.r, c2.r, t)),
+    g: Math.round(Utils.lerp(c1.g, c2.g, t)),
+    b: Math.round(Utils.lerp(c1.b, c2.b, t))
+  })
+};
+
+/* =============================================
+   STATE MANAGEMENT
+   ============================================= */
+const State = {
+  allPlayers: [],
+  playerByNick: new Map(),
+  viewPlayers: [],
+  selected: new Set(),
+  selectedArr: [],
+  assignedPos: new Map(),
+  teams: [],
+  resultId: '',
+  resultUrl: '',
+  spare: [],
+  query: '',
+  sort: 'mmr_desc',
+  teamsConfirmed: false,
+  captainsSelected: false,
+  teamFortunes: [], // [{top,bottom,grade,revealed}]
+  
+  setPlayers(players) {
+    this.allPlayers = Array.isArray(players) ? players : [];
+    this.playerByNick = new Map(this.allPlayers.map(p => [p.nick, p]));
+  },
+  
+  findPlayer(nick) {
+    return this.playerByNick.get(nick) || null;
+  },
+  
+  refreshSelectedCache() {
+    this.selectedArr = Array.from(this.selected, n => this.findPlayer(n)).filter(Boolean);
+  },
+  
+  setPlayerSelected(nick, isSelected) {
+    const p = this.findPlayer(nick);
+    if (!p) return false;
+    if (isSelected) {
+      this.selected.add(nick);
+      if (!this.assignedPos.has(nick)) {
+        this.assignedPos.set(nick, Utils.normalizePos(p.primary));
+      }
+    } else {
+      this.selected.delete(nick);
+      this.assignedPos.delete(nick);
+    }
+    this.refreshSelectedCache();
+    return true;
+  },
+  
+  setPlayerPosition(nick, pos) {
+    if (!this.selected.has(nick)) return false;
+    this.assignedPos.set(nick, Utils.normalizePos(pos));
+    return true;
+  }
+};
+
+/* =============================================
+   HISTORY (UNDO / REDO)
+   ============================================= */
+const HistoryManager = {
+  stack: [],
+  idx: -1,
+  max: 80,
+  _lock: false,
+
+  // State -> plain object (JSON-safe)
+  snapshot() {
+    return {
+      selected: Array.from(State.selected),
+      assignedPos: Array.from(State.assignedPos.entries()), // [ [nick,pos], ... ]
+      teams: State.teams.map(t => ({
+        id: t.id,
+        effSum: t.effSum,
+        captain: t.captain || null,
+        slots: { ...t.slots } // {TOP:{nick}|null,...}
+      })),
+      spare: State.spare.map(x => ({ nick: x.nick })),
+      teamsConfirmed: !!State.teamsConfirmed,
+      captainsSelected: !!State.captainsSelected
+    };
+  },
+
+  apply(snap) {
+    if (!snap) return;
+    this._lock = true;
+    try {
+      State.selected = new Set(snap.selected || []);
+      State.assignedPos = new Map(snap.assignedPos || []);
+
+      State.teams = (snap.teams || []).map(t => ({
+        id: t.id,
+        effSum: Number(t.effSum) || 0,
+        captain: t.captain || null,
+        slots: {
+          TOP: t.slots?.TOP ?? null,
+          JUG: t.slots?.JUG ?? null,
+          MID: t.slots?.MID ?? null,
+          ADC: t.slots?.ADC ?? null,
+          SUP: t.slots?.SUP ?? null
+        }
+      }));
+
+      State.spare = (snap.spare || []).map(x => ({ nick: x.nick }));
+      State.teamsConfirmed = !!snap.teamsConfirmed;
+      State.captainsSelected = !!snap.captainsSelected;
+
+      // UI 동기화
+      State.refreshSelectedCache();
+      Renderer.renderLeftList();      // ✅ 왼쪽 체크박스/카드 선택상태도 같이 맞추는 게 안전
+      Renderer.renderRightSelected();
+      Renderer.renderTeamBoard();
+      UI.updateBadges();
+      UI.updateButtonVisibility();
+      UI.updateUndoRedoButtons();
+    } finally {
+      this._lock = false;
+    }
+  },
+
+
+  resetWithCurrent() {
+    this.stack = [this.snapshot()];
+    this.idx = 0;
+    UI.updateUndoRedoButtons();
+  },
+
+
+  capture() {
+    if (this._lock) return;
+
+    const snap = this.snapshot();
+
+    // redo 구간 제거
+    if (this.idx < this.stack.length - 1) {
+      this.stack = this.stack.slice(0, this.idx + 1);
+    }
+
+    this.stack.push(snap);
+
+    // max 초과 시 앞에서 제거 + idx 보정
+    if (this.stack.length > this.max) {
+      this.stack.shift();
+      this.idx = this.stack.length - 1;
+      return;
+    }
+
+    this.idx = this.stack.length - 1;
+    UI.updateUndoRedoButtons();
+  },
+
+
+  canUndo() { return this.idx > 0; },
+  canRedo() { return this.idx < this.stack.length - 1; },
+
+  undo() {
+    if (!this.canUndo()) return;
+    this.idx--;
+    this.apply(this.stack[this.idx]);
+    UI.showToast('↩ 되돌림', 1200, 'info');
+    UI.updateUndoRedoButtons();
+  },
+
+  redo() {
+    if (!this.canRedo()) return;
+    this.idx++;
+    this.apply(this.stack[this.idx]);
+    UI.showToast('↪ 다시 실행', 1200, 'info');
+    UI.updateUndoRedoButtons();
+  }
+};
+
+
+/* =============================================
+   TEAM MANAGER
+   ============================================= */
+const TeamManager = {
+  recalcEffSum(teamIdx) {
+    const team = State.teams[teamIdx];
+    if (!team) return;
+    let sum = 0;
+    for (const role of CONFIG.ROLES) {
+      const nick = team.slots[role]?.nick;
+      if (!nick) continue;
+      const p = State.findPlayer(nick);
+      if (!p) continue;
+      sum += MMRCalculator.effective(p, role);
+    }
+    team.effSum = sum;
+  },
+  
+  recalcAllEffSum() {
+    State.teams.forEach((_, idx) => this.recalcEffSum(idx));
+  },
+  
+  isInTeams(nick) {
+    return State.teams.some(t => CONFIG.ROLES.some(r => t.slots[r]?.nick === nick));
+  },
+  
+  removeFromSpare(nick) {
+    State.spare = State.spare.filter(x => x.nick !== nick);
+  },
+  
+  addToSpare(nick) {
+    if (!nick || State.spare.some(x => x.nick === nick)) return;
+    State.spare.push({ nick });
+  },
+  
+  removeFromSpareIfInTeams(nick) {
+    if (nick && this.isInTeams(nick)) this.removeFromSpare(nick);
+  },
+  
+  calcStats(team) {
+    const vals = [];
+    for (const role of CONFIG.ROLES) {
+      const nick = team.slots[role]?.nick;
+      if (!nick) continue;
+      const p = State.findPlayer(nick);
+      if (!p) continue;
+      const v = MMRCalculator.effective(p, role);
+      if (Number.isFinite(v)) vals.push(v);
+    }
+    const n = vals.length;
+    if (!n) return { avg: NaN, sd: NaN, n: 0 };
+    const avg = vals.reduce((a, b) => a + b, 0) / n;
+    if (n === 1) return { avg, sd: 0, n: 1 };
+    const varSample = vals.reduce((acc, x) => acc + (x - avg) * (x - avg), 0) / (n - 1);
+    return { avg, sd: Math.sqrt(varSample), n };
+  },
+  
+  validateWithRules(team) {
+    const badRoles = new Set();
+    for (const rule of TEAM_RULES) {
+      const result = rule.check(team, State.findPlayer.bind(State), MMRCalculator.getTier);
+      if (!result.ok && result.badRoles) {
+        result.badRoles.forEach(r => badRoles.add(r));
+      }
+    }
+    return Array.from(badRoles);
+  }
+};
+
+/* =============================================
+   MMR CALCULATOR
+   ============================================= */
+const MMRCalculator = {
+  tierByMMR(mmr) {
+    const val = Number(mmr);
+    if (!Number.isFinite(val)) return CONFIG.TIER_NAMES.MIDDLE;
+    if (val >= CONFIG.TIER.CELESTIAL_MIN) return CONFIG.TIER_NAMES.CELESTIAL;
+    if (val <= CONFIG.TIER.UNDERGROUND_MAX) return CONFIG.TIER_NAMES.UNDERGROUND;
+    return CONFIG.TIER_NAMES.MIDDLE;
+  },
+  
+  getTier(player) {
+    if (!player) return CONFIG.TIER_NAMES.MIDDLE;
+    return player.tier || this.tierByMMR(player.mmr);
+  },
+  
+  isLow(player) {
+    return player && Number(player.mmr) <= CONFIG.TIER.UNDERGROUND_MAX;
+  },
+  
+  excelCorrected(baseMMR, assignedRole) {
+    const W = Number(baseMMR);
+    if (!Number.isFinite(W)) return 0;
+    const role = Utils.normalizePos(assignedRole);
+    if (role === 'SUP') return W * 0.9;
+    const tierMul = W <= CONFIG.TIER.UNDERGROUND_MAX + 10 ? 0.9 : W >= CONFIG.TIER.CELESTIAL_MIN ? 1.2 : 1.05;
+    const sigmoid = 0.975 + ((1 / (1 + Math.exp((W - 300) / 50))) + (1 / (1 + Math.exp(-(W - 600) / 50)))) / 2 * 0.05;
+    return W * tierMul * sigmoid;
+  },
+  
+  effective(p, assignedRole) {
+    if (!p) return 0;
+    const role = Utils.normalizePos(assignedRole);
+    const primary = Utils.normalizePos(p.primary);
+    const baseRaw = Number(p.mmr);
+    if (!Number.isFinite(baseRaw)) return 0;
+    const tier = this.tierByMMR(baseRaw);
+    
+    if (primary === 'ALL' || role === primary || tier === CONFIG.TIER_NAMES.UNDERGROUND) {
+      return this.excelCorrected(baseRaw, role);
+    }
+    
+    let mmrForCorrection = baseRaw;
+    if (role === 'SUP') {
+      mmrForCorrection = baseRaw - CONFIG.MMR_PENALTY.SUPPORT;
+    } else {
+      mmrForCorrection = baseRaw - (tier === CONFIG.TIER_NAMES.CELESTIAL ? CONFIG.MMR_PENALTY.CELESTIAL : CONFIG.MMR_PENALTY.MIDDLE);
+    }
+    return this.excelCorrected(mmrForCorrection, role);
+  },
+  
+  baseForDisplay(p, assignedRole) {
+    if (!p) return { raw: NaN, penal: NaN, off: false };
+    const role = Utils.normalizePos(assignedRole);
+    const primary = Utils.normalizePos(p.primary);
+    const baseRaw = Number(p.mmr);
+    if (!Number.isFinite(baseRaw)) return { raw: NaN, penal: NaN, off: false };
+    const tier = this.tierByMMR(baseRaw);
+    let penal = baseRaw;
+    
+    if (primary === 'ALL' || role === primary || tier === CONFIG.TIER_NAMES.UNDERGROUND) {
+      return { raw: baseRaw, penal, off: primary !== 'ALL' && role !== primary && tier !== CONFIG.TIER_NAMES.UNDERGROUND };
+    }
+    
+    if (role === 'SUP') {
+      penal = baseRaw - CONFIG.MMR_PENALTY.SUPPORT;
+    } else {
+      penal = baseRaw - (tier === CONFIG.TIER_NAMES.CELESTIAL ? CONFIG.MMR_PENALTY.CELESTIAL : CONFIG.MMR_PENALTY.MIDDLE);
+    }
+    return { raw: baseRaw, penal, off: true };
+  }
+};
+
+/* =============================================
+   UI MANAGER
+   ============================================= */
+const UI = {
+  dom: {},
+
+  updateUndoRedoButtons() {
+    if (!this.dom.undoBtn || !this.dom.redoBtn) return;
+    this.dom.undoBtn.disabled = !HistoryManager.canUndo();
+    this.dom.redoBtn.disabled = !HistoryManager.canRedo();
+  },
+
+  init() {
+    const $ = sel => document.querySelector(sel);
+    this.dom = {
+      metaLine: $('#metaLine'),
+      selectedBadge: $('#selectedBadge'),
+      searchInput: $('#searchInput'),
+      sortSelect: $('#sortSelect'),
+      playerList: $('#playerList'),
+      autoTeamBtn: $('#autoTeamBtn'),
+      confirmTeamBtn: $('#confirmTeamBtn'),
+      selectCaptainBtn: $('#selectCaptainBtn'),
+      copyTeamsBtn: $('#copyTeamsBtn'),
+      teamMetaLine: $('#teamMetaLine'),
+      resultLinkBtn: $('#resultLinkBtn'),
+      teamBoard: $('#teamBoard'),
+      spareZone: $('#spareZone'),
+      spareList: $('#spareList'),
+      spareCount: $('#spareCount'),
+      attendMeta: $('#attendMeta'),
+      selectedList: $('#selectedList'),
+      leftPanel: $('#leftPanel'),
+      collapseLeftBtn: $('#collapseLeftBtn'),
+      toast: $('#toast'),
+      selectedHint: $('#selectedHint'),
+      undoBtn: $('#undoBtn'),
+      redoBtn: $('#redoBtn'),
+      fortuneArea: $('#fortuneArea'),
+      syncBtn: $('#syncBtn'),
+
+    };
+  },
+  
+  setTeamMeta(msg, type = 'info') {
+    if (!this.dom.teamMetaLine) return;
+    Utils.setStatusClass(this.dom.teamMetaLine, type);
+    this.dom.teamMetaLine.textContent = msg || '-';
+  },
+  
+  showToast(message, duration = 2000, type = 'info') {
+    const toast = this.dom.toast;
+    toast.textContent = message;
+    toast.classList.remove('info','success','warn','error');
+    toast.classList.add(type);
+    toast.classList.add('show');
+    setTimeout(() => toast.classList.remove('show'), duration);
+  },
+  
+  updateBadges() {
+    this.dom.selectedBadge.textContent = `참여 ${State.selected.size}명`;
+  },
+  
+  updateButtonVisibility() {
+    const hasTeams = State.teams.length > 0;
+    this.dom.confirmTeamBtn.style.display = hasTeams && !State.teamsConfirmed ? 'inline-block' : 'none';
+    this.dom.selectCaptainBtn.style.display = State.teamsConfirmed && !State.captainsSelected ? 'inline-block' : 'none';
+    this.dom.copyTeamsBtn.style.display = State.captainsSelected ? 'inline-block' : 'none';
+    if (this.dom.resultLinkBtn) {
+    this.dom.resultLinkBtn.style.display = (State.captainsSelected && State.resultUrl) ? 'inline-block' : 'none';
+    }
+    
+    [this.dom.autoTeamBtn, this.dom.confirmTeamBtn, this.dom.selectCaptainBtn, this.dom.copyTeamsBtn]
+      .forEach(b => b.classList.remove('primary'));
+    
+    if (!hasTeams) this.dom.autoTeamBtn.classList.add('primary');
+    else if (hasTeams && !State.teamsConfirmed) this.dom.confirmTeamBtn.classList.add('primary');
+    else if (State.teamsConfirmed && !State.captainsSelected) this.dom.selectCaptainBtn.classList.add('primary');
+    else if (State.captainsSelected) this.dom.copyTeamsBtn.classList.add('primary');
+  },
+  
+  applyTeamAvgGradient() {
+    const els = Array.from(document.querySelectorAll('.teamAvgValue[data-avg]'));
+    if (!els.length) return;
+    const avgs = els.map(el => Number(el.dataset.avg)).filter(v => Number.isFinite(v));
+    if (!avgs.length) return;
+    
+    const min = Math.min(...avgs);
+    const max = Math.max(...avgs);
+    const denom = (max - min) || 1;
+    const rootStyle = getComputedStyle(document.documentElement);
+    const baseHex = (rootStyle.getPropertyValue('--ok').trim() || '#43d17a');
+    const baseRgb = Utils.hexToRgb(baseHex) || { r:67, g:209, b:122 };
+    
+    const A_MIN = 0.12, A_MAX = 0.55;
+    const B_MIN = 0.20, B_MAX = 0.70;
+    
+    els.forEach(el => {
+      const v = Number(el.dataset.avg);
+      if (!Number.isFinite(v)) return;
+      const t = Math.min(1, Math.max(0, (v - min) / denom));
+      const a = Utils.lerp(A_MIN, A_MAX, t);
+      const b = Utils.lerp(B_MIN, B_MAX, t);
+      el.style.setProperty('--avg-rgb', `${baseRgb.r},${baseRgb.g},${baseRgb.b}`);
+      el.style.setProperty('--avg-alpha', a.toFixed(3));
+      el.style.setProperty('--avg-border-a', b.toFixed(3));
+      el.classList.add('avgGrad');
+    });
+  }
+};
+
+/* =============================================
+   RENDERER
+   ============================================= */
+const Renderer = {
+  refreshView() {
+    const q = State.query.toLowerCase();
+    State.viewPlayers = State.allPlayers
+      .filter(p => !q || (p.nick || '').toLowerCase().includes(q))
+      .sort((a, b) => this.comparePlayers(a, b, State.sort));
+    State.refreshSelectedCache();
+    this.renderAll();
+  },
+  
+  comparePlayers(a, b, mode) {
+    const nickA = (a.nick || '').toLowerCase();
+    const nickB = (b.nick || '').toLowerCase();
+    const mmrA = Number(a.mmr);
+    const mmrB = Number(b.mmr);
+    switch (mode) {
+      case 'mmr_asc': return (mmrA - mmrB) || nickA.localeCompare(nickB);
+      case 'mmr_desc': return (mmrB - mmrA) || nickA.localeCompare(nickB);
+      case 'nick_desc': return nickB.localeCompare(nickA) || (mmrB - mmrA);
+      case 'nick_asc':
+      default: return nickA.localeCompare(nickB) || (mmrB - mmrA);
+    }
+  },
+  
+  renderAll() {
+    this.renderLeftList();
+    this.renderRightSelected();
+    UI.updateBadges();
+  },
+  
+  renderLeftList() {
+    if (!State.viewPlayers.length) {
+      UI.dom.playerList.innerHTML = `<div class="empty">${State.query ? '검색 결과가 없음' : '표시할 인원이 없음'}</div>`;
+      return;
+    }
+    UI.dom.playerList.innerHTML = State.viewPlayers.map((p, idx) => this.createLeftCardHtml(p, idx)).join('');
+  },
+  
+  createLeftCardHtml(p, idx) {
+    const isSelected = State.selected.has(p.nick);
+    const tierCls = Utils.tierClass(p.tier);
+    const tierCardCls = Utils.tierCardClass(p.tier);
+    const secArrRaw = Array.isArray(p.secondary) ? p.secondary : String(p.secondary || '').split(',').map(s => s.trim()).filter(Boolean);
+    const secLabel = secArrRaw.length ? secArrRaw.map(x => CONFIG.ROLE_NAMES[Utils.normalizePos(x)] || x).join(', ') : '-';
+    const mmr = Number(p.mmr);
+    const mmrText = Number.isFinite(mmr) ? String(mmr) : '-';
+    const primaryPos = Utils.normalizePos(p.primary);
+    const primaryLabel = CONFIG.ROLE_NAMES[primaryPos] || primaryPos;
+    
+    return `
+      <div class="card ${isSelected ? 'selected' : ''} ${tierCardCls}" data-idx="${idx}">
+        <div class="chk"><input type="checkbox" ${isSelected ? 'checked' : ''}></div>
+        <div>
+          <div class="row1">
+            <div class="nick">${Utils.escape(p.nick || '')}</div>
+            <div class="mmr">${Utils.escape(mmrText)}</div>
+          </div>
+          <div class="row2">
+            <span class="pill tier ${tierCls}">${Utils.escape(p.tier || '-')}</span>
+            <span class="pill pos-${primaryPos}">${Utils.escape(primaryLabel)}</span>
+            <span class="pill">부: ${Utils.escape(secLabel)}</span>
+          </div>
+        </div>
+      </div>
+    `;
+  },
+  
+  renderRightSelected() {
+    const selectedPlayers = State.selectedArr;
+    UI.dom.attendMeta.textContent = `${selectedPlayers.length}명`;
+    const buckets = Object.fromEntries(CONFIG.POSITION_ORDER.map(k => [k, []]));
+    
+    for (const p of selectedPlayers) {
+      const assigned = State.assignedPos.get(p.nick);
+      const key = Utils.normalizePos(assigned || p.primary);
+      (buckets[key] || (buckets[key] = [])).push(p);
+    }
+    
+    for (const k of CONFIG.POSITION_ORDER) {
+      buckets[k].sort((a, b) => (a.nick || '').localeCompare(b.nick || '', 'ko'));
+    }
+    
+    if (UI.dom.selectedHint) {
+      UI.dom.selectedHint.style.display = selectedPlayers.length ? 'none' : 'block';
+    }
+    
+    const always = ['TOP', 'JUG', 'MID', 'ADC', 'SUP'];
+    const html = [];
+    if (buckets.ALL.length) html.push(this.createSectionHtml('ALL', buckets.ALL));
+    for (const k of always) html.push(this.createSectionHtml(k, buckets[k] || []));
+    UI.dom.selectedList.innerHTML = html.join('');
+  },
+  
+  createSectionHtml(posKey, players) {
+    const label = CONFIG.ROLE_NAMES[posKey] || posKey;
+    return `
+      <div class="posBox" data-pos="${posKey}">
+        <div class="posBoxHeader">
+          <div class="posBoxTitle">${Utils.escape(label)} <span class="countInline">${players.length}명</span></div>
+        </div>
+        <div class="miniGrid">${players.map(p => this.createMiniPlayerHtml(p)).join('')}</div>
+      </div>
+    `;
+  },
+  
+  createMiniPlayerHtml(p) {
+    const assigned = Utils.normalizePos(State.assignedPos.get(p.nick) || p.primary);
+    const primary = Utils.normalizePos(p.primary);
+    const isOffrole = assigned !== primary;
+    const secArr = Array.isArray(p.secondary) ? p.secondary : [];
+    const secKey = secArr.length ? Utils.normalizePos(secArr[0]) : null;
+    const secLabel = secKey ? (CONFIG.ROLE_NAMES[secKey] || secKey) : '';
+    const subText = secLabel ? `부:${secLabel}` : '';
+    
+    return `
+      <div class="miniP ${isOffrole ? 'offrole' : ''}" draggable="true" data-nick="${Utils.escape(p.nick || '')}">
+        <div class="miniNickRow">
+          <div class="miniNick2" title="${Utils.escape(p.nick || '')}">${Utils.escape(p.nick || '')}</div>
+          ${subText ? `<span class="miniSubPos">${Utils.escape(subText)}</span>` : ''}
+        </div>
+      </div>
+    `;
+  },
+  
+  renderTeamBoard() {
+    UI.updateButtonVisibility();
+    if (!State.teams.length) {
+      UI.dom.teamBoard.innerHTML = `<div class="empty">팀이 아직 없습니다. "자동 팀짜기"를 눌러주세요.</div>`;
+      this.renderSpare();
+      UI.updateUndoRedoButtons(); // ✅ 여기서도 버튼 갱신
+      return;
+    }
+
+    UI.dom.teamBoard.innerHTML = `
+      <table class="teamTable">
+        <colgroup>
+          <col class="col-team">
+          ${CONFIG.ROLES.map(() => `<col class="col-slot">`).join('')}
+        </colgroup>
+        <thead>
+          <tr>
+            <th>팀</th>
+            ${CONFIG.ROLES.map(r => `<th data-role="${r}">${r}</th>`).join('')}
+          </tr>
+        </thead>
+        <tbody>${State.teams.map((t, i) => this.renderTeamRow(t, i)).join('')}</tbody>
+      </table>
+    `;
+
+    this.renderSpare();
+    UI.applyTeamAvgGradient();
+    this.validateAndPaint();
+
+    // ❌ this.updateUndoRedoButtons();  (Renderer에 없음, 여기서 에러났던 지점)
+    UI.updateUndoRedoButtons(); // ✅ 올바른 호출
+  },
+
+  renderTeamRow(team, teamIdx) {
+    const { avg, sd } = TeamManager.calcStats(team);
+    return `
+      <tr data-team="${teamIdx}">
+        <td>
+          <div class="teamHead">
+            <div class="teamNameBig">팀 ${team.id}</div>
+            <div class="teamStats">
+              <div class="teamAvgLine">
+                <span class="teamAvgLabel">avg</span>
+                <span class="teamAvgValue" data-avg="${Number.isFinite(avg) ? avg : ''}">
+                  ${Number.isFinite(avg) ? avg.toFixed(1) : '-'}
+                </span>
+              </div>
+              <div class="teamSdLine">
+                <span class="teamSdLabel">sd</span>
+                <span class="teamSdValue">${Number.isFinite(sd) ? sd.toFixed(1) : '-'}</span>
+              </div>
+            </div>
+          </div>
+        </td>
+        ${CONFIG.ROLES.map(role => this.renderTeamCell(teamIdx, role, team.slots[role])).join('')}
+      </tr>
+    `;
+  },
+  
+  renderTeamCell(teamIdx, role, slot) {
+    if (!slot || !slot.nick) {
+      return `<td class="empty" data-dropzone="slot" data-team="${teamIdx}" data-role="${role}">EMPTY</td>`;
+    }
+    const p = State.findPlayer(slot.nick);
+    const baseInfo = p ? MMRCalculator.baseForDisplay(p, role) : { raw: NaN, penal: NaN, off: false };
+    const eff = p ? MMRCalculator.effective(p, role) : NaN;
+    const off = !!baseInfo.off;
+    const isCaptain = State.teams[teamIdx].captain === slot.nick;
+    const tierName = MMRCalculator.getTier(p);
+    const tcls = Utils.tierClass(tierName);
+    const nickTierClass = (tcls === 'cel') ? 'tier-cel' : (tcls === 'und') ? 'tier-und' : 'tier-mid';
+    
+    return `
+      <td draggable="true" data-drag="slot" data-team="${teamIdx}" data-role="${role}" data-nick="${Utils.escape(slot.nick)}" data-dropzone="slot">
+        <div class="teamCell ${off ? 'offrole' : ''}">
+          <div class="teamNick ${nickTierClass}">
+            ${isCaptain ? '👑 ' : ''}${Utils.escape(slot.nick)}
+          </div>
+          <div class="teamNums">
+            <div class="teamBase">${Number.isFinite(baseInfo.raw) ? (off && baseInfo.penal !== baseInfo.raw ? `${baseInfo.raw.toFixed(0)}→${baseInfo.penal.toFixed(0)}` : `${baseInfo.raw.toFixed(0)}`) : '-'}</div>
+            <div class="teamCorr"><b>${Number.isFinite(eff) ? eff.toFixed(1) : '-'}</b></div>
+          </div>
+        </div>
+      </td>
+    `;
+  },
+  
+  renderSpare() {
+    UI.dom.spareCount.textContent = `${State.spare.length}명`;
+    if (!State.spare.length) { UI.dom.spareList.innerHTML = ''; return; }
+    UI.dom.spareList.innerHTML = State.spare.map(x => {
+      const nick = x.nick;
+      const p = State.findPlayer(nick);
+      const posKey = Utils.normalizePos(State.assignedPos.get(nick) || p?.primary || 'ALL');
+      const posLabel = CONFIG.ROLE_NAMES[posKey] || posKey;
+      return `
+        <div class="miniP" draggable="true" data-drag="spare" data-nick="${Utils.escape(nick)}">
+          <div class="miniNickRow">
+            <div class="miniNick2" title="${Utils.escape(nick)}">${Utils.escape(nick)}</div>
+            <span class="miniSubPos">${Utils.escape(posLabel)}</span>
+          </div>
+        </div>
+      `;
+    }).join('');
+  },
+  
+  validateAndPaint() {
+    const cellMap = new Map();
+    document.querySelectorAll('.teamTable td[data-dropzone="slot"]').forEach(td => {
+      cellMap.set(`${td.dataset.team}|${td.dataset.role}`, td);
+    });
+    document.querySelectorAll('.teamTable td.violate').forEach(td => td.classList.remove('violate'));
+    State.teams.forEach((team, teamIdx) => {
+      const violations = TeamManager.validateWithRules(team);
+      violations.forEach(role => {
+        const td = cellMap.get(`${teamIdx}|${role}`);
+        if (td) td.classList.add('violate');
+      });
+    });
+  },
+
+  renderFortuneArea() {
+  const el = UI.dom.fortuneArea;
+  if (!el) return;
+
+  const ready = State.teamsConfirmed && State.captainsSelected && State.teams.length > 0;
+  if (!ready) {
+    el.style.display = 'none';
+    el.innerHTML = '';
+    return;
+  }
+
+  const n = State.teams.length;
+  const hasPool = Array.isArray(State.teamFortunes) && State.teamFortunes.length === n;
+
+  el.style.display = 'block';
+
+  const head = `
+    <div class="fortuneHead">
+      <div class="fortuneTitle">팀별 운세</div>
+      <div class="fortuneHint">버튼을 눌러 각 팀 운세를 공개</div>
+    </div>
+  `;
+
+  const gridItems = Array.from({ length: n }, (_, i) => {
+    const teamNo = i + 1;
+    const item = hasPool ? State.teamFortunes[i] : null;
+
+    if (item && item.revealed) {
+      return `
+        <div class="fortuneCard">
+          <div class="fortuneTopRow">
+            <div class="fortuneTeamName">${teamNo}팀</div>
+          </div>
+          <div class="fortuneLine">${Utils.escape(item.top || '')}</div>
+          <div class="fortuneLine">${Utils.escape(item.bottom || '')}</div>
+        </div>
+      `;
+    }
+
+    // 아직 뽑기 전(또는 아직 공개 전): 버튼
+    return `
+      <button class="xbtn fortuneBtn" data-action="revealFortune" data-teamidx="${i}">
+        ${teamNo}팀 운세뽑기 🎴
+      </button>
+    `;
+  }).join('');
+
+  el.innerHTML = head + `<div class="fortuneGrid">${gridItems}</div>`;
+},
+};
+
+/* =============================================
+   CONFETTI
+   ============================================= */
+const Confetti = {
+  layer: null,
+
+  init(){
+    this.layer = document.getElementById('confettiLayer');
+  },
+
+  burstFromEl(el, count = 26){
+    if (!this.layer || !el) return;
+    const r = el.getBoundingClientRect();
+    const x = r.left + r.width * 0.5;
+    const y = r.top + r.height * 0.35;
+    this.burst(x, y, count);
+  },
+
+  burst(x, y, count = 26){
+    if (!this.layer) return;
+
+    // 기존 조각 너무 많으면 정리
+    if (this.layer.childElementCount > 220) this.layer.innerHTML = '';
+
+    const colors = [
+      'rgba(77,163,255,0.95)',   // accent
+      'rgba(67,209,122,0.95)',   // ok
+      'rgba(255,79,163,0.95)',   // pink
+      'rgba(245,158,11,0.95)',   // amber
+      'rgba(231,238,248,0.95)'   // text-ish
+    ];
+
+    for (let i = 0; i < count; i++){
+      const p = document.createElement('span');
+      p.className = 'confettiPiece';
+
+      // 시작 위치
+      const x0 = (x + (Math.random()*14 - 7)) + 'px';
+      const y0 = (y + (Math.random()*10 - 5)) + 'px';
+
+      // 목표 이동(아래로 낙하 + 좌우 분산)
+      const dx = (Math.random()*260 - 130);
+      const dy = (220 + Math.random()*220);
+
+      // 회전
+      const r0 = (Math.random()*180 - 90) + 'deg';
+      const r1 = (720 + Math.random()*720) * (Math.random() < 0.5 ? -1 : 1) + 'deg';
+
+      // 지속시간
+      const dur = (900 + Math.random()*650) + 'ms';
+
+      // 스타일 랜덤
+      p.style.left = '0px';
+      p.style.top = '0px';
+      p.style.background = colors[(Math.random()*colors.length) | 0];
+
+      // 길쭉/네모 섞기
+      const w = (6 + Math.random()*6);
+      const h = (8 + Math.random()*10);
+      p.style.width = w.toFixed(1) + 'px';
+      p.style.height = h.toFixed(1) + 'px';
+      p.style.borderRadius = (2 + Math.random()*3).toFixed(1) + 'px';
+
+      // CSS 변수로 애니메이션 파라미터 전달
+      p.style.setProperty('--x0', x0);
+      p.style.setProperty('--y0', y0);
+      p.style.setProperty('--x1', (x + dx) + 'px');
+      p.style.setProperty('--y1', (y + dy) + 'px');
+      p.style.setProperty('--r0', r0);
+      p.style.setProperty('--r1', r1);
+      p.style.setProperty('--dur', dur);
+
+      this.layer.appendChild(p);
+
+      // 애니 끝나면 제거
+      p.addEventListener('animationend', () => p.remove(), { once: true });
+    }
+  }
+};
+
+
+/* =============================================
+   FORTUNE UI (Modal + Staged Reveal)
+   ============================================= */
+const FortuneUI = {
+  _timer: [],
+
+  open(data) {
+  const m = document.getElementById('fortuneModal');
+  if (!m) return;
+
+  // clear
+  this._clearTimers();
+  m.classList.add('show');
+  m.setAttribute('aria-hidden', 'false');
+
+  const teamEl = document.getElementById('fortunePopTeam');
+  const gradeEl = document.getElementById('fortunePopGrade');
+  const wheel = document.getElementById('fortuneWheel');
+  const wheelText = document.getElementById('fortuneWheelText');
+  const topLine = document.getElementById('fortuneTopLine');
+  const bottomLine = document.getElementById('fortuneBottomLine');
+
+  teamEl.textContent = `${data.teamNo}팀 운세`;
+
+  // ✅ 등급 완전 숨김 (뽑는 중 / 결과 후 모두)
+  gradeEl.textContent = '';
+  gradeEl.style.display = 'none';
+
+  // reset result
+  topLine.textContent = '';
+  bottomLine.textContent = '';
+  topLine.classList.remove('show');
+  bottomLine.classList.remove('show');
+
+  // restart spin
+  wheel.classList.remove('spinning');
+  void wheel.offsetWidth;
+  wheel.classList.add('spinning');
+
+  wheelText.textContent = '운세뽑는중';
+
+  const hasBottom = !!(data.bottom && String(data.bottom).trim().length);
+
+  // 1) 스핀 종료 → 운세 상
+  this._timer.push(setTimeout(() => {
+    wheelText.textContent = '';
+    topLine.textContent = data.top || '';
+    topLine.classList.add('show');
+
+    if (!hasBottom) {
+      Confetti.burstFromEl(document.querySelector('.fortunePop'), 30);
+    }
+  }, 1150));
+
+  // 2) 3초 뒤 → 운세 하
+  if (hasBottom) {
+    this._timer.push(setTimeout(() => {
+      wheelText.textContent = '';
+      bottomLine.textContent = data.bottom || '';
+      bottomLine.classList.add('show');
+
+      Confetti.burstFromEl(document.querySelector('.fortunePop'), 34);
+    }, 1150 + 3000));
+  }
+},
+
+
+  close() {
+    const m = document.getElementById('fortuneModal');
+    if (!m) return;
+    this._clearTimers();
+    m.classList.remove('show');
+    m.setAttribute('aria-hidden', 'true');
+  },
+
+  _clearTimers() {
+    this._timer.forEach(t => clearTimeout(t));
+    this._timer = [];
+  },
+
+  wire() {
+    const m = document.getElementById('fortuneModal');
+    const closeBtn = document.getElementById('fortuneCloseBtn');
+    if (!m) return;
+
+    m.addEventListener('click', (e) => {
+      const overlay = e.target.closest('[data-close="1"]');
+      if (overlay) this.close();
+    });
+
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => this.close());
+    }
+
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.close();
+    });
+  }
+};
+
+
+/* =============================================
+   TEAM BUILDER
+   ============================================= */
+/* =============================================
+   TEAM BUILDER
+   ============================================= */
+const TeamBuilder = {
+  build() {
+    const picked = State.selectedArr;
+    const teamCount = Math.floor(picked.length / 5);
+
+    if (teamCount <= 0) {
+      UI.setTeamMeta('5명 이상 선택해야 팀을 만들 수 있습니다.', 'warn');
+      State.teams = [];
+      State.spare = [];
+      State.teamsConfirmed = false;
+      State.captainsSelected = false;
+      return;
+    }
+
+    State.teams = Array.from({ length: teamCount }, (_, i) => ({
+      id: i + 1,
+      slots: { TOP: null, JUG: null, MID: null, ADC: null, SUP: null },
+      effSum: 0,
+      captain: null
+    }));
+    State.spare = [];
+    State.teamsConfirmed = false;
+    State.captainsSelected = false;
+
+    // 1) 포지션 풀 구성 (assignedPos 기준)
+    const pools = { TOP: [], JUG: [], MID: [], ADC: [], SUP: [], ALL: [] };
+    for (const p of picked) {
+      const assigned = Utils.normalizePos(State.assignedPos.get(p.nick) || p.primary);
+      (pools[assigned] || pools.ALL).push(p);
+    }
+
+    // 2) 각 역할별 팀수만큼 확보 + 초과는 spare로
+    for (const role of CONFIG.ROLES) {
+      const arr = pools[role] || [];
+      if (arr.length < teamCount) {
+        UI.setTeamMeta(`${role} 인원이 부족합니다 (${arr.length}/${teamCount})`, 'warn');
+        State.teams = [];
+        State.spare = [];
+        return;
+      }
+      for (const p of arr.slice(teamCount)) State.spare.push({ nick: p.nick });
+      pools[role] = arr.slice(0, teamCount);
+    }
+    for (const p of (pools.ALL || [])) State.spare.push({ nick: p.nick });
+
+    // 3) 역할별 후보 정렬 (effective 기준)
+    const sorted = {};
+    for (const role of CONFIG.ROLES) {
+      sorted[role] = pools[role]
+        .slice()
+        .sort((a, b) => MMRCalculator.effective(b, role) - MMRCalculator.effective(a, role));
+    }
+
+    // 4) 1차 배치: 기존 그리디
+    this.assignRoleGreedy('MID', sorted.MID);
+    this.assignRoleGreedy('ADC', sorted.ADC, { constrained: true });
+    this.assignRoleGreedy('JUG', sorted.JUG, { constrained: true });
+    this.assignRoleGreedy('TOP', sorted.TOP);
+    this.assignRoleGreedy('SUP', sorted.SUP);
+
+    // 5) 2차 최적화: 동일 역할 스왑으로 평균 격차 줄이기 (규칙 위반은 절대 허용 안 함)
+    this.improveBalance({
+      restarts: 18,     // 랜덤 스왑 시도 묶음(재시드) 횟수
+      steps: 1600,      // 재시드 당 스왑 탐색 횟수
+      earlyStopGap: 0.6 // max-min(팀 평균)이 이 값 이하로 내려가면 조기 종료 (원하면 0.3 같은 더 빡센 값)
+    });
+
+    TeamManager.recalcAllEffSum();
+    UI.setTeamMeta(`팀 수 ${teamCount} · 평균 MMR 균등화(정교)`, 'ok');
+  },
+
+  assignRoleGreedy(role, candidates, opt = {}) {
+    for (const p of candidates) {
+      const teamsByWeak = State.teams
+        .map((t, idx) => ({ team: t, idx }))
+        .sort((a, b) => a.team.effSum - b.team.effSum);
+
+      let placed = false;
+
+      for (const { team: t } of teamsByWeak) {
+        if (t.slots[role]) continue;
+        if (opt.constrained && !this.checkConstraints(t, role, p)) continue;
+        t.slots[role] = { nick: p.nick };
+        t.effSum += MMRCalculator.effective(p, role);
+        placed = true;
+        break;
+      }
+
+      // 규칙 때문에 못 들어가면, 남은 슬롯 중 가장 약한 팀에 강제 배치(기존 동작 유지)
+      if (!placed) {
+        const weakest = State.teams
+          .filter(t => !t.slots[role])
+          .sort((a, b) => a.effSum - b.effSum)[0];
+        if (weakest) {
+          weakest.slots[role] = { nick: p.nick };
+          weakest.effSum += MMRCalculator.effective(p, role);
+        }
+      }
+    }
+  },
+
+  checkConstraints(team, role, player) {
+    const mid = State.findPlayer(team.slots.MID?.nick);
+    if (role === 'ADC' && mid && MMRCalculator.isLow(mid) && MMRCalculator.isLow(player)) return false;
+    if (role === 'JUG' && mid && MMRCalculator.isLow(mid) && MMRCalculator.isLow(player)) return false;
+    return true;
+  },
+
+  // --------- 아래부터 “정교 평균 맞추기” 핵심 ---------
+
+  // 팀 평균 격차(최우선) + 팀합 표준편차(보조) 최소화
+  score() {
+    const sums = State.teams.map(t => Number(t.effSum) || 0);
+    const n = sums.length || 1;
+    const min = Math.min(...sums);
+    const max = Math.max(...sums);
+    const avg = sums.reduce((a, b) => a + b, 0) / n;
+    const variance = sums.reduce((acc, x) => acc + (x - avg) * (x - avg), 0) / n;
+    const sd = Math.sqrt(variance);
+
+    // 1) max-min 최우선, 2) sd는 타이브레이커
+    return (max - min) + sd * 0.12;
+  },
+
+  avgGap() {
+    const sums = State.teams.map(t => Number(t.effSum) || 0);
+    const min = Math.min(...sums);
+    const max = Math.max(...sums);
+    // 5인 고정이라 sum gap == avg gap * 5 (표시용)
+    return (max - min) / 5;
+  },
+
+  // 특정 팀이 규칙 위반인지 (TEAM_RULES 기반)
+  teamOk(team) {
+    const bad = TeamManager.validateWithRules(team);
+    return !bad || bad.length === 0;
+  },
+
+  // 두 팀만 바뀌었을 때 빠르게 effSum 재계산(정확)
+  recalcEffSumForTeam(teamIdx) {
+    TeamManager.recalcEffSum(teamIdx);
+  },
+
+  // role 동일 스왑이 규칙 위반을 만들면 거절
+  trySwapSameRole(role, aIdx, bIdx) {
+    if (aIdx === bIdx) return false;
+    const ta = State.teams[aIdx];
+    const tb = State.teams[bIdx];
+    if (!ta || !tb) return false;
+
+    const aNick = ta.slots[role]?.nick;
+    const bNick = tb.slots[role]?.nick;
+    if (!aNick || !bNick) return false;
+
+    // 스왑
+    ta.slots[role] = { nick: bNick };
+    tb.slots[role] = { nick: aNick };
+
+    // effSum 업데이트(정확 재계산)
+    this.recalcEffSumForTeam(aIdx);
+    this.recalcEffSumForTeam(bIdx);
+
+    // 규칙 검사: 영향을 받는 팀만 검사
+    if (!this.teamOk(ta) || !this.teamOk(tb)) {
+      // 롤백
+      ta.slots[role] = { nick: aNick };
+      tb.slots[role] = { nick: bNick };
+      this.recalcEffSumForTeam(aIdx);
+      this.recalcEffSumForTeam(bIdx);
+      return false;
+    }
+
+    return true;
+  },
+
+  // 평균 맞추기 최적화(로컬 서치)
+  improveBalance({ restarts = 18, steps = 1600, earlyStopGap = 0.6 } = {}) {
+    if (!State.teams.length) return;
+
+    // 시작점에서 규칙 위반이 있으면(강제배치 때문에) 일단 그대로 두고,
+    // 개선 과정에서도 “규칙 위반 스왑”은 절대 허용하지 않음.
+    TeamManager.recalcAllEffSum();
+
+    let bestSnap = this.snapshotTeamsOnly();
+    let bestScore = this.score();
+
+    const teamN = State.teams.length;
+
+    // “대충 균등화 되었는지” 기준(평균 격차)
+    const isGoodEnough = () => this.avgGap() <= earlyStopGap;
+
+    // 재시드(랜덤 탐색) 루프
+    for (let r = 0; r < restarts; r++) {
+      // best 상태에서 시작
+      this.applyTeamsOnly(bestSnap);
+      TeamManager.recalcAllEffSum();
+
+      let localBestScore = this.score();
+      let localNoImprove = 0;
+
+      for (let s = 0; s < steps; s++) {
+        if (isGoodEnough()) break;
+
+        // 확률적으로 “제약 민감 역할”을 더 자주 만져줌
+        const roll = Math.random();
+        const role =
+          roll < 0.32 ? 'MID' :
+          roll < 0.56 ? 'ADC' :
+          roll < 0.78 ? 'JUG' :
+          roll < 0.90 ? 'TOP' : 'SUP';
+
+        const aIdx = Math.floor(Math.random() * teamN);
+        let bIdx = Math.floor(Math.random() * teamN);
+        if (bIdx === aIdx) bIdx = (bIdx + 1) % teamN;
+
+        const beforeScore = this.score();
+
+        const swapped = this.trySwapSameRole(role, aIdx, bIdx);
+        if (!swapped) continue;
+
+        const afterScore = this.score();
+
+        // 개선되면 유지, 아니면 롤백(힐클라임)
+        if (afterScore + 1e-9 < beforeScore) {
+          if (afterScore + 1e-9 < localBestScore) {
+            localBestScore = afterScore;
+            localNoImprove = 0;
+          } else {
+            localNoImprove++;
+          }
+
+          if (afterScore + 1e-9 < bestScore) {
+            bestScore = afterScore;
+            bestSnap = this.snapshotTeamsOnly();
+          }
+        } else {
+          // 롤백: 다시 스왑하면 원복됨(현재 슬롯 기준으로)
+          this.trySwapSameRole(role, aIdx, bIdx);
+          localNoImprove++;
+        }
+
+        // 너무 오래 개선 없으면 중간에 탈출해서 다음 재시드로
+        if (localNoImprove > 260) break;
+      }
+
+      if (isGoodEnough()) break;
+    }
+
+    // 최종 best 적용
+    this.applyTeamsOnly(bestSnap);
+    TeamManager.recalcAllEffSum();
+  },
+
+  // teams만 스냅샷(HistoryManager랑 별개)
+  snapshotTeamsOnly() {
+    return State.teams.map(t => ({
+      id: t.id,
+      effSum: t.effSum,
+      captain: t.captain || null,
+      slots: {
+        TOP: t.slots.TOP ? { nick: t.slots.TOP.nick } : null,
+        JUG: t.slots.JUG ? { nick: t.slots.JUG.nick } : null,
+        MID: t.slots.MID ? { nick: t.slots.MID.nick } : null,
+        ADC: t.slots.ADC ? { nick: t.slots.ADC.nick } : null,
+        SUP: t.slots.SUP ? { nick: t.slots.SUP.nick } : null
+      }
+    }));
+  },
+
+  applyTeamsOnly(snap) {
+    if (!Array.isArray(snap) || snap.length !== State.teams.length) return;
+    for (let i = 0; i < snap.length; i++) {
+      const src = snap[i];
+      const dst = State.teams[i];
+      dst.id = src.id;
+      dst.captain = src.captain || null;
+      dst.slots = {
+        TOP: src.slots.TOP ? { nick: src.slots.TOP.nick } : null,
+        JUG: src.slots.JUG ? { nick: src.slots.JUG.nick } : null,
+        MID: src.slots.MID ? { nick: src.slots.MID.nick } : null,
+        ADC: src.slots.ADC ? { nick: src.slots.ADC.nick } : null,
+        SUP: src.slots.SUP ? { nick: src.slots.SUP.nick } : null
+      };
+      dst.effSum = Number(src.effSum) || 0;
+    }
+  }
+};
+
+/* =============================================
+   DRAG & DROP MANAGER
+   ============================================= */
+const DragDropManager = {
+  _rightWired: false,
+  _teamWired: false,
+  
+  wireRightPanel() {
+    if (this._rightWired) return;
+    this._rightWired = true;
+    const list = UI.dom.selectedList;
+    
+    list.addEventListener('dragstart', (e) => {
+      const card = e.target.closest('.miniP');
+      if (!card) return;
+      const nick = card.dataset.nick;
+      if (!nick) return;
+      card.classList.add('dragging');
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('text/plain', nick);
+    });
+    
+    list.addEventListener('dragend', (e) => {
+      const card = e.target.closest('.miniP');
+      if (card) card.classList.remove('dragging');
+      document.querySelectorAll('.posBox.dragOver').forEach(el => el.classList.remove('dragOver'));
+    });
+    
+    list.addEventListener('dragover', (e) => {
+      const box = e.target.closest('.posBox');
+      if (!box) return;
+      e.preventDefault();
+      box.classList.add('dragOver');
+    });
+    
+    list.addEventListener('dragleave', (e) => {
+      const box = e.target.closest('.posBox');
+      if (!box) return;
+      if (!box.contains(e.relatedTarget)) box.classList.remove('dragOver');
+    });
+    
+    list.addEventListener('drop', (e) => {
+      const box = e.target.closest('.posBox');
+      if (!box) return;
+      e.preventDefault();
+      box.classList.remove('dragOver');
+      const nick = e.dataTransfer.getData('text/plain');
+      if (!nick || !State.selected.has(nick)) return;
+      const toPos = box.dataset.pos;
+      if (!toPos) return;
+      State.setPlayerPosition(nick, toPos);
+      Renderer.renderRightSelected();
+      UI.updateBadges();
+      HistoryManager.capture();
+    });
+  },
+  
+  wireTeam() {
+    if (this._teamWired) return;
+    this._teamWired = true;
+    const board = UI.dom.teamBoard;
+    const spareZone = UI.dom.spareZone;
+    const spareList = UI.dom.spareList;
+    
+    const onDragStart = (e) => {
+      const el = e.target.closest('[draggable="true"]');
+      if (!el) return;
+      const nick = el.dataset.nick;
+      if (!nick) return;
+      const payload = { nick, from: el.dataset.drag, team: el.dataset.team ?? null, role: el.dataset.role ?? null };
+      e.dataTransfer.effectAllowed = 'move';
+      e.dataTransfer.setData('application/json', JSON.stringify(payload));
+      el.classList.add('dragging');
+    };
+    
+    const onDragEnd = (e) => {
+      const el = e.target.closest('[draggable="true"]');
+      if (el) el.classList.remove('dragging');
+      document.querySelectorAll('.dragOver').forEach(x => x.classList.remove('dragOver'));
+    };
+    
+    board.addEventListener('dragstart', onDragStart);
+    board.addEventListener('dragend', onDragEnd);
+    spareList.addEventListener('dragstart', onDragStart);
+    spareList.addEventListener('dragend', onDragEnd);
+    
+    const onDragOver = (e) => {
+      const dz = e.target.closest('[data-dropzone]');
+      if (!dz) return;
+      e.preventDefault();
+      dz.classList.add('dragOver');
+    };
+    
+    const onDragLeave = (e) => {
+      const dz = e.target.closest('[data-dropzone]');
+      if (!dz) return;
+      if (!dz.contains(e.relatedTarget)) dz.classList.remove('dragOver');
+    };
+    
+    board.addEventListener('dragover', onDragOver);
+    board.addEventListener('dragleave', onDragLeave);
+    
+    board.addEventListener('drop', (e) => {
+      e.preventDefault();
+      const data = e.dataTransfer.getData('application/json');
+      if (!data) return;
+      let src;
+      try { src = JSON.parse(data); } catch { return; }
+      if (!src?.nick) return;
+      const targetSlot = e.target.closest('[data-dropzone="slot"]');
+      if (!targetSlot) return;
+      const toTeam = Number(targetSlot.dataset.team);
+      const toRole = targetSlot.dataset.role;
+      targetSlot.classList.remove('dragOver');
+      if (!Number.isFinite(toTeam) || !toRole || !State.teams[toTeam]) return;
+      const targetNick = State.teams[toTeam].slots[toRole]?.nick || null;
+      
+      if (src.from === 'slot') {
+        this.handleSlotToSlotSwap(src, toTeam, toRole, targetNick);
+      } else if (src.from === 'spare') {
+        this.handleSpareToSlot(src, toTeam, toRole, targetNick);
+      }
+    });
+    
+    spareZone.addEventListener('dragover', (e) => { e.preventDefault(); spareZone.classList.add('dragOver'); });
+    spareZone.addEventListener('dragleave', (e) => { if (!spareZone.contains(e.relatedTarget)) spareZone.classList.remove('dragOver'); });
+    
+    spareZone.addEventListener('drop', (e) => {
+      e.preventDefault();
+      spareZone.classList.remove('dragOver');
+      const data = e.dataTransfer.getData('application/json');
+      if (!data) return;
+      let src;
+      try { src = JSON.parse(data); } catch { return; }
+      if (src.from !== 'slot') return;
+      this.handleSlotToSpare(src);
+    });
+  },
+  
+  handleSlotToSlotSwap(src, toTeam, toRole, targetNick) {
+    const fromTeam = Number(src.team);
+    const fromRole = src.role;
+    if (!Number.isFinite(fromTeam) || !fromRole || !State.teams[fromTeam]) return;
+    const srcNick = State.teams[fromTeam].slots[fromRole]?.nick || null;
+    if (!srcNick) return;
+    State.teams[toTeam].slots[toRole] = srcNick ? { nick: srcNick } : null;
+    State.teams[fromTeam].slots[fromRole] = targetNick ? { nick: targetNick } : null;
+    TeamManager.removeFromSpare(srcNick);
+    if (targetNick) TeamManager.removeFromSpare(targetNick);
+    TeamManager.recalcEffSum(toTeam);
+    TeamManager.recalcEffSum(fromTeam);
+    Renderer.renderTeamBoard();
+    HistoryManager.capture();
+  },
+  
+  handleSpareToSlot(src, toTeam, toRole, targetNick) {
+    const srcNick = src.nick;
+    TeamManager.removeFromSpare(srcNick);
+    if (targetNick) {
+      TeamManager.removeFromSpare(targetNick);
+      TeamManager.addToSpare(targetNick);
+    }
+    State.teams[toTeam].slots[toRole] = { nick: srcNick };
+    TeamManager.removeFromSpareIfInTeams(srcNick);
+    TeamManager.recalcEffSum(toTeam);
+    Renderer.renderTeamBoard();
+    HistoryManager.capture();
+  },
+  
+  handleSlotToSpare(src) {
+    const fromTeam = Number(src.team);
+    const fromRole = src.role;
+    if (!Number.isFinite(fromTeam) || !fromRole || !State.teams[fromTeam]) return;
+    const nick = State.teams[fromTeam].slots[fromRole]?.nick || null;
+    if (!nick) return;
+    State.teams[fromTeam].slots[fromRole] = null;
+    TeamManager.removeFromSpare(nick);
+    TeamManager.addToSpare(nick);
+    TeamManager.recalcEffSum(fromTeam);
+    Renderer.renderTeamBoard();
+    HistoryManager.capture();
+  }
+};
+
+/* =============================================
+   BGM MANAGER
+   ============================================= */
+const BGMManager = {
+  player: null,
+  ready: false,
+  
+  init() {
+    window.onYouTubeIframeAPIReady = () => {
+      this.player = new YT.Player('ytBgm', {
+        videoId: CONFIG.BGM_YT_VIDEO_ID,
+        height: '1',
+        width: '1',
+        playerVars: { autoplay: 0, controls: 0, disablekb: 1, fs: 0, rel: 0, modestbranding: 1, playsinline: 1, loop: 0 },
+        events: { onReady: () => { this.ready = true; } }
+      });
+    };
+  },
+  
+  play() {
+    if (!this.ready || !this.player) return;
+    try {
+      this.player.setVolume(50);
+      this.player.seekTo(0, true);
+      this.player.playVideo();
+    } catch (e) {}
+  },
+  
+  stop() {
+    if (!this.ready || !this.player) return;
+    try { this.player.stopVideo(); } catch (e) {}
+  }
+};
+
+/* =============================================
+   TEAM ACTIONS
+   ============================================= */
+
+   function buildTeamResultPayload() {
+  return {
+    version: 1,
+    createdAt: new Date().toISOString(),
+    meta: {
+      teamCount: State.teams.length,
+      selectedCount: State.selected.size,
+      spareCount: State.spare.length,
+      teamsConfirmed: !!State.teamsConfirmed,
+      captainsSelected: !!State.captainsSelected
+    },
+    teams: State.teams.map(t => ({
+      id: t.id,
+      captain: t.captain || null,
+      slots: CONFIG.ROLES.reduce((acc, role) => {
+        acc[role] = t.slots[role]?.nick || null;
+        return acc;
+      }, {}),
+      // 표시용 데이터(읽기 페이지에서 재계산 안 해도 됨)
+      effSum: Number(t.effSum) || 0
+    })),
+    spare: State.spare.map(x => x.nick),
+    fortunes: Array.isArray(State.teamFortunes) ? State.teamFortunes : []
+  };
+}
+
+const TeamActions = {
+  confirm() {
+    if (!State.teams.length) return;
+    State.teamsConfirmed = true;
+    BGMManager.play();
+    UI.updateButtonVisibility();
+    UI.showToast('🎉 팀이 확정되었습니다!', 3000, 'success');
+    HistoryManager.capture();
+  },
+
+  saveResultLink() {
+  if (!State.teams.length) return;
+  if (!State.teamsConfirmed) { UI.showToast('❗ 먼저 "팀 확정"을 해주세요', 2000, 'warn'); return; }
+  if (!State.captainsSelected) { UI.showToast('❗ 먼저 "팀장 뽑기"를 해주세요', 2000, 'warn'); return; }
+
+  const payload = buildTeamResultPayload();
+
+  UI.showToast('🔗 결과 링크 생성 중...', 1200, 'info');
+
+  API.saveTeamResult(payload, (res) => {
+    State.resultId = res.resultId || '';
+    State.resultUrl = res.url || '';
+
+    if (State.resultUrl) {
+      // 링크를 클립보드에 자동 복사
+      navigator.clipboard.writeText(State.resultUrl).catch(() => {});
+      UI.showToast('✅ 결과 링크 생성 완료 (클립보드 복사됨)', 2200, 'success');
+    } else {
+      UI.showToast('⚠️ 링크 생성은 됐는데 URL이 비어있음', 2200, 'warn');
+    }
+
+    UI.updateButtonVisibility();
+    HistoryManager.capture();
+  }, (msg) => {
+    UI.showToast(`❌ 링크 생성 실패: ${msg}`, 2600, 'error');
+  });
+},
+
+  
+  selectCaptains() {
+    if (!State.teams.length) return;
+    State.teams.forEach(team => {
+      const members = CONFIG.ROLES.map(role => team.slots[role]?.nick).filter(Boolean);
+      if (members.length > 0) {
+        const randomIndex = Math.floor(Math.random() * members.length);
+        team.captain = members[randomIndex];
+      }
+    });
+    State.captainsSelected = true;
+    Renderer.renderTeamBoard();
+    Renderer.renderFortuneArea();
+    UI.showToast('👑 팀장이 선정되었습니다!', 2500, 'success');
+    HistoryManager.capture();
+  },
+  
+  copyToClipboard() {
+    if (!State.teams.length) return;
+    if (!State.teamsConfirmed) { UI.showToast('❗ 먼저 "팀 확정"을 해주세요', 2000, 'warn'); return; }
+    if (!State.captainsSelected) { UI.showToast('❗ 먼저 "팀장 뽑기"를 해주세요', 2000, 'warn'); return; }
+    
+    const lines = [];
+    State.teams.forEach(team => {
+      const members = CONFIG.ROLES.map(role => team.slots[role]?.nick).filter(Boolean);
+      const captain = team.captain || '';
+      const captainIcon = captain ? '👑' : '';
+      const captainPart = captain ? `${captainIcon}${captain}` : '(팀장없음)';
+      lines.push(`${team.id}팀 팀장(${captainIcon}):${captainPart} - ${members.join(' ')}`);
+    });
+    if (State.spare.length > 0) {
+      lines.push(`스페어 - ${State.spare.map(x => x.nick).join(' ')}`);
+    }
+    const text = lines.join('\n');
+    
+    navigator.clipboard.writeText(text).then(() => {
+      UI.showToast('📋 클립보드에 복사되었습니다!', 2000, 'success');
+        // ✅ 복사 성공 후 자동으로 결과 링크 생성
+  TeamActions.saveResultLink();
+    }).catch(err => {
+      console.error('Copy failed:', err);
+      UI.showToast('❌ 복사 실패', 2000, 'error');
+    });
+  }
+};
+
+/* =============================================
+   API
+   ============================================= */
+const API = {
+  loadPlayers() {
+    UI.dom.metaLine.textContent = '불러오는 중...';
+    google.script.run
+      .withSuccessHandler((res) => {
+        if (!res || !res.ok) {
+          UI.dom.metaLine.textContent = '불러오기 실패';
+          UI.dom.playerList.innerHTML = `<div class="empty">에러: ${Utils.escape(res?.error || 'unknown error')}</div>`;
+          return;
+        }
+        State.setPlayers(res.players);
+        Utils.setStatusClass(UI.dom.metaLine, 'ok');
+        UI.dom.metaLine.textContent = `${res.meta?.sheet || '시트'} · ${State.allPlayers.length}명`;
+        Renderer.refreshView();
+        HistoryManager.resetWithCurrent();
+      })
+      .withFailureHandler((err) => {
+        Utils.setStatusClass(UI.dom.metaLine, 'error');
+        UI.dom.metaLine.textContent = '불러오기 실패';
+        UI.dom.playerList.innerHTML = `<div class="empty">에러: ${Utils.escape(err?.message || String(err))}</div>`;
+      })
+      .getPlayers();
+  },
+  drawFortunes(teamCount, onOk, onFail) {
+  google.script.run
+    .withSuccessHandler((res) => {
+      if (!res || !res.ok) {
+        (onFail || (()=>{}))(res?.error || 'unknown error');
+        return;
+      }
+      (onOk || (()=>{}))(res.fortunes || []);
+    })
+    .withFailureHandler((err) => {
+      (onFail || (()=>{}))(err?.message || String(err));
+    })
+    .drawTeamFortunesByRules(teamCount);
+},
+
+saveTeamResult(payload, onOk, onFail) {
+  google.script.run
+    .withSuccessHandler((res) => {
+      if (!res || !res.ok) return (onFail || (()=>{}))(res?.error || 'unknown error');
+      (onOk || (()=>{}))(res); // {resultId, url, createdAt}
+    })
+    .withFailureHandler((err) => (onFail || (()=>{}))(err?.message || String(err)))
+    .saveTeamResult(payload, '', ''); // createdBy/note는 일단 공란
+},
+
+syncFromSource(onOk, onFail) {
+  google.script.run
+    .withSuccessHandler((res) => {
+      if (!res || !res.ok) return (onFail || (()=>{}))(res?.error || 'unknown error');
+      (onOk || (()=>{}))(res);
+    })
+    .withFailureHandler((err) => (onFail || (()=>{}))(err?.message || String(err)))
+    .syncTierFromSource();
+},
+
+
+};
+
+/* =============================================
+   EVENT HANDLERS
+   ============================================= */
+const EventHandlers = {
+  init() {
+    const debouncedSearch = Utils.debounce((value) => {
+      State.query = (value || '').trim();
+      Renderer.refreshView();
+    }, CONFIG.UI.SEARCH_DEBOUNCE_MS);
+    
+    UI.dom.searchInput.addEventListener('input', (e) => debouncedSearch(e.target.value));
+    // ✅ 검색창 Enter: 결과가 1명일 때 즉시 참석자 추가
+UI.dom.searchInput.addEventListener('keydown', (e) => {
+  if (e.key !== 'Enter') return;
+
+  const q = (UI.dom.searchInput.value || '').trim();
+  if (!q) return;
+
+  // ✅ 입력 디바운스가 나중에 query를 덮어쓰지 않게 취소
+  if (debouncedSearch.cancel) debouncedSearch.cancel();
+
+  // debounce 대기중이어도 즉시 최신 쿼리로 반영
+  State.query = q;
+  Renderer.refreshView();
+
+  // 현재 필터 결과가 1명인지 확인
+  const only = (State.viewPlayers || [])[0];
+  if (!only || (State.viewPlayers || []).length !== 1) {
+    UI.showToast('Enter로 추가하려면 검색 결과가 1명이어야 함', 1400, 'warn');
+    return;
+  }
+
+  // 이미 선택된 사람이면 안내만
+  if (State.selected.has(only.nick)) {
+    UI.showToast('이미 참석자에 있음', 1200, 'info');
+    UI.dom.searchInput.select();
+    return;
+  }
+
+  // 선택(=참석자 추가)
+  State.setPlayerSelected(only.nick, true);
+
+  // ✅ 검색창 비우고: query도 확실히 초기화 (그리고 다시 한번 debounce 취소)
+  UI.dom.searchInput.value = '';
+  State.query = '';
+  if (debouncedSearch.cancel) debouncedSearch.cancel();
+
+  Renderer.refreshView();            // ✅ 여기서 "전체 명단" 다시 떠야 정상
+  HistoryManager.capture();
+  UI.showToast(`➕ ${only.nick} 참석자 추가`, 1400, 'success');
+  UI.dom.searchInput.focus();
+});
+
+if (UI.dom.syncBtn) {
+  UI.dom.syncBtn.addEventListener('click', () => {
+    UI.dom.syncBtn.disabled = true;
+    UI.showToast('⟳ 동기화 중...', 1200, 'info');
+
+    API.syncFromSource((res) => {
+      UI.showToast(`✅ 동기화 완료 (${res.wrote || 0}명)`, 1800, 'success');
+      // 동기화 후 바로 다시 로드
+      API.loadPlayers();
+      UI.dom.syncBtn.disabled = false;
+    }, (msg) => {
+      UI.showToast(`❌ 동기화 실패: ${msg}`, 2500, 'error');
+      UI.dom.syncBtn.disabled = false;
+    });
+  });
+}
+
+
+    UI.dom.sortSelect.addEventListener('change', (e) => { State.sort = e.target.value; Renderer.refreshView(); });
+    
+    UI.dom.playerList.addEventListener('click', (e) => {
+      const card = e.target.closest('.card');
+      if (!card) return;
+      const chk = card.querySelector('input[type="checkbox"]');
+      if (!chk || e.target === chk) return;
+      chk.click();
+    });
+    
+    UI.dom.playerList.addEventListener('change', (e) => {
+      const chk = e.target;
+      if (!(chk instanceof HTMLInputElement) || chk.type !== 'checkbox') return;
+      const card = chk.closest('.card');
+      if (!card) return;
+      const idx = Number(card.dataset.idx);
+      if (!Number.isFinite(idx)) return;
+      const p = State.viewPlayers[idx];
+      if (!p || !p.nick) return;
+      State.setPlayerSelected(p.nick, chk.checked);
+      card.classList.toggle('selected', chk.checked);
+      Renderer.renderRightSelected();
+      UI.updateBadges();
+      HistoryManager.capture();
+    });
+    
+    UI.dom.autoTeamBtn.addEventListener('click', () => {
+      TeamBuilder.build();
+      Renderer.renderTeamBoard();
+      UI.updateButtonVisibility();
+      HistoryManager.capture();
+    });
+    
+    UI.dom.confirmTeamBtn.addEventListener('click', () => TeamActions.confirm());
+    UI.dom.selectCaptainBtn.addEventListener('click', () => TeamActions.selectCaptains());
+    UI.dom.copyTeamsBtn.addEventListener('click', () => TeamActions.copyToClipboard());
+    if (UI.dom.undoBtn) UI.dom.undoBtn.addEventListener('click', () => HistoryManager.undo());
+    if (UI.dom.redoBtn) UI.dom.redoBtn.addEventListener('click', () => HistoryManager.redo());
+
+    
+    UI.dom.collapseLeftBtn.addEventListener('click', () => {
+      const app = document.querySelector('.app');
+      const isCollapsed = UI.dom.leftPanel.classList.toggle('collapsed');
+      app.classList.toggle('leftCollapsed', isCollapsed);
+      const iconEl = UI.dom.collapseLeftBtn.querySelector('.icon');
+      const labelEl = UI.dom.collapseLeftBtn.querySelector('.label');
+      if (isCollapsed) {
+        iconEl.textContent = '›';
+        labelEl.textContent = '펼치기';
+      } else {
+        iconEl.textContent = '‹';
+        labelEl.textContent = '접기';
+      }
+    });
+
+if (UI.dom.resultLinkBtn) {
+  UI.dom.resultLinkBtn.addEventListener('click', () => {
+    // 1) 서버가 준 url이 있으면 그걸 우선 사용
+    if (State.resultUrl) {
+      window.open(State.resultUrl, '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    // 2) url이 비어있어도 resultId가 있으면 현재 웹앱 주소 기준으로 직접 조립
+    if (State.resultId) {
+      const u = new URL(window.location.href);
+      u.search = ''; // 기존 쿼리 제거
+      u.hash = '';
+      u.searchParams.set('page', 'result');
+      u.searchParams.set('id', State.resultId);
+      window.open(u.toString(), '_blank', 'noopener,noreferrer');
+      return;
+    }
+
+    UI.showToast('먼저 결과 링크를 생성하세요', 1600, 'warn');
+  });
+}
+
+
+     // ✅ 팀별 운세 공개 버튼(스페어 하단)
+if (UI.dom.fortuneArea) {
+  UI.dom.fortuneArea.addEventListener('click', (e) => {
+    const btn = e.target.closest('[data-action="revealFortune"]');
+    if (!btn) return;
+
+    if (!(State.teamsConfirmed && State.captainsSelected)) {
+      UI.showToast('❗ 팀 확정 + 팀장 뽑기 후 사용 가능', 2000, 'warn');
+      return;
+    }
+
+    const idx = Number(btn.dataset.teamidx);
+    if (!Number.isFinite(idx) || idx < 0 || idx >= State.teams.length) return;
+
+    const n = State.teams.length;
+
+    const reveal = () => {
+      const item = State.teamFortunes[idx];
+      if (!item) return;
+      if (item.revealed) return;
+
+      // ✅ 팝업 연출 시작
+      FortuneUI.open({
+        teamNo: idx + 1,
+        grade: item.grade,
+        top: item.top || '',
+        bottom: item.bottom || ''
+      });
+
+      // ✅ 상태는 “클릭 즉시 공개 처리” (원하면 bottom 뜬 뒤로 미룰 수도 있음)
+      item.revealed = true;
+      Renderer.renderFortuneArea();
+      UI.showToast(`🎴 ${idx + 1}팀 운세 공개!`, 1600, 'success');
+      HistoryManager.capture();
+    };
+
+    // 아직 운세 풀을 안 뽑았으면: 백엔드 1회 호출로 n개를 뽑아온 뒤, 클릭한 팀만 공개
+    if (!Array.isArray(State.teamFortunes) || State.teamFortunes.length !== n) {
+      UI.showToast('운세를 불러오는 중...', 1200, 'info');
+      API.drawFortunes(n, (fortunes) => {
+        State.teamFortunes = (fortunes || []).slice(0, n).map(f => ({
+          top: f?.top || '',
+          bottom: f?.bottom || '',
+          grade: Number(f?.grade) || 0,
+          revealed: false
+        }));
+        reveal();
+        HistoryManager.capture();
+      }, (msg) => {
+        UI.showToast(`❌ 운세 불러오기 실패: ${msg}`, 2500, 'error');
+      });
+      return;
+    }
+
+    // 이미 풀은 있음: 해당 팀만 공개
+    reveal();
+  });
+}
+  }
+};
+
+/* =============================================
+   MAIN
+   ============================================= */
+function initApp() {
+  UI.init();
+  BGMManager.init();
+  FortuneUI.wire();
+  Confetti.init();
+  EventHandlers.init();
+  DragDropManager.wireRightPanel();
+  DragDropManager.wireTeam();
+  API.loadPlayers();
+  HistoryManager.resetWithCurrent();
+}
+
+document.addEventListener('keydown', (e) => {
+  const isMac = /Mac|iPhone|iPad|iPod/.test(navigator.platform);
+  const mod = isMac ? e.metaKey : e.ctrlKey;
+
+  if (!mod) return;
+
+  // Ctrl/Cmd + Z : undo
+  if (e.key.toLowerCase() === 'z' && !e.shiftKey) {
+    e.preventDefault();
+    HistoryManager.undo();
+    return;
+  }
+
+  // Ctrl/Cmd + Shift + Z : redo (mac 스타일)
+  if (e.key.toLowerCase() === 'z' && e.shiftKey) {
+    e.preventDefault();
+    HistoryManager.redo();
+    return;
+  }
+
+  // Ctrl/Cmd + Y : redo (windows 스타일)
+  if (e.key.toLowerCase() === 'y') {
+    e.preventDefault();
+    HistoryManager.redo();
+  }
+});
+
+
+window.addEventListener('DOMContentLoaded', initApp);
+  </script>
+</body>
+</html>
