@@ -1,0 +1,1016 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+  <title>팀 결과</title>
+  <style>
+      :root{
+        --bg:#0b0f14; --panel:#0f1520; --card:#121a26; --card2:#0f1724; --line:#1f2a3a;
+        --text:#e7eef8; --muted:#9fb0c3; --accent:#4da3ff; --ok:#43d17a; --danger:#ff5b5b;
+
+        --tier-celestial:#4da3ff; --tier-celestial-bg: rgba(77,163,255,0.08); --tier-celestial-border: rgba(77,163,255,0.45);
+        --tier-middle:#43d17a;    --tier-middle-bg: rgba(67,209,122,0.08);  --tier-middle-border: rgba(67,209,122,0.45);
+        --tier-underground:#ff4fa3; --tier-underground-bg: rgba(255,79,163,0.08); --tier-underground-border: rgba(255,79,163,0.45);
+
+        --pos-top:#8b5cf6; --pos-jug:#ef4444; --pos-mid:#3b82f6; --pos-adc:#f59e0b; --pos-sup:#10b981;
+        --radius-sm: 6px; --radius-lg: 14px;
+        --mmr-final: rgba(231,238,248,0.92);
+      }
+    *{box-sizing:border-box}
+    body{
+      margin:0; font-family:"Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif;
+      background:var(--bg); color:var(--text);
+      padding:16px;
+    }
+    .wrap{max-width:980px; margin:0 auto; display:flex; flex-direction:column; gap:12px;}
+    .panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); padding:14px; }
+    .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
+    .title{font-size:18px; font-weight:900; letter-spacing:-0.2px}
+    .meta{font-size:12px; color:var(--muted); font-weight:600}
+    .btn{
+      border:1px solid var(--line);
+      background:rgba(255,255,255,0.03);
+      color:var(--text);
+      padding:10px 12px;
+      border-radius:12px;
+      cursor:pointer;
+      font-weight:800;
+      white-space:nowrap;
+    }
+    .btn:hover{border-color:#2a3a52}
+    .badge{
+      display:inline-flex; align-items:center; gap:8px;
+      padding:8px 10px;
+      border-radius:999px;
+      border:1px solid rgba(255,255,255,0.12);
+      background:rgba(255,255,255,0.03);
+      font-size:12px;
+      font-weight:800;
+      color:rgba(231,238,248,0.92);
+    }
+
+    .teamTable{
+  width:100%;
+  border-collapse: separate;
+  border-spacing: 0;
+  font-size:12px;
+  table-layout: fixed;
+}
+.teamTable col.col-team{ width:140px; }
+.teamTable col.col-slot{ width:120px; }
+.teamTable th, .teamTable td{
+  border:1px solid var(--line);
+  padding:6px;
+  text-align:center;
+  background: rgba(0,0,0,0.12);
+  overflow:hidden;
+}
+.teamTable th{ font-weight:700; background:rgba(255,255,255,0.04); color:var(--muted); }
+.teamTable td{ font-weight:800; }
+
+.teamTable thead th{ padding-top:10px; padding-bottom:12px; }
+.teamTable thead th[data-role="TOP"]{ color: var(--pos-top); box-shadow: inset 0 -3px 0 rgba(139,92,246,0.9); }
+.teamTable thead th[data-role="JUG"]{ color: var(--pos-jug); box-shadow: inset 0 -3px 0 rgba(239,68,68,0.9); }
+.teamTable thead th[data-role="MID"]{ color: var(--pos-mid); box-shadow: inset 0 -3px 0 rgba(59,130,246,0.9); }
+.teamTable thead th[data-role="ADC"]{ color: var(--pos-adc); box-shadow: inset 0 -3px 0 rgba(245,158,11,0.9); }
+.teamTable thead th[data-role="SUP"]{ color: var(--pos-sup); box-shadow: inset 0 -3px 0 rgba(16,185,129,0.9); }
+
+.teamTable td.violate{
+  background: rgba(255,91,91,0.12);
+  border-color: rgba(255,91,91,0.6);
+}
+.teamTable td.violate .teamNick{ color:#ffb4b4; }
+    .grid{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px;}
+    @media (max-width: 900px){ .grid{grid-template-columns:1fr;} }
+    .teamCard{
+      background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
+      border:1px solid var(--line);
+      border-radius:var(--radius);
+      padding:12px;
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+    
+    .teamHead{
+      display:grid;
+      grid-template-columns: 40% 60%;
+      align-items:center;
+      gap:10px;
+    }
+    .teamName{font-size:16px; font-weight:950}
+    .teamSmall{font-size:12px; color:var(--muted); font-weight:700}
+    table{width:100%; border-collapse:separate; border-spacing:0}
+    th, td{
+      border:1px solid var(--line);
+      padding:8px;
+      text-align:center;
+      font-size:13px;
+      background:rgba(0,0,0,0.14);
+    }
+    th{color:var(--muted); font-weight:900; background:rgba(255,255,255,0.04)}
+    td{font-weight:900}
+    .captain{color:var(--accent)}
+    .empty{
+      padding:14px;
+      border:1px dashed var(--line);
+      border-radius:var(--radius);
+      color:var(--muted);
+      font-size:13px;
+      text-align:center;
+    }
+    .err{color:#ffb4b4}
+    code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
+
+    .teamNameBig{
+  font-size:18px;
+  font-weight:950;
+  letter-spacing:-0.4px;
+  text-align:left;
+  padding-left:2px;
+  white-space:nowrap;
+}
+.teamStats{ display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+.teamAvgLine, .teamSdLine{
+  display:flex;
+  align-items:baseline;
+  gap:6px;
+  justify-content:flex-start;
+  font-weight:600;
+}
+.teamAvgLabel, .teamSdLabel{
+  font-size:11px;
+  color:var(--muted);
+  font-weight:800;
+  text-transform: lowercase;
+}
+.teamAvgValue{
+  font-size:16px;
+  font-weight:900;
+  color:var(--text);
+  font-variant-numeric: tabular-nums;
+}
+.teamAvgValue.avgGrad{
+  position:relative;
+  display:inline-block;
+  padding:1px 8px;
+  border-radius:999px;
+  color:var(--text);
+  font-weight:950;
+  letter-spacing:-0.2px;
+  background: rgba(var(--avg-rgb), var(--avg-alpha));
+  border: 1px solid rgba(var(--avg-rgb), var(--avg-border-a));
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset, 0 6px 18px rgba(0,0,0,0.25);
+}
+.teamAvgValue.avgGrad::after{
+  content:"";
+  position:absolute;
+  inset:-6px -10px;
+  border-radius:999px;
+  background: radial-gradient(closest-side, rgba(var(--avg-rgb), calc(var(--avg-alpha) * 0.55)), transparent 70%);
+  filter: blur(6px);
+  opacity: 0.9;
+  z-index:-1;
+}
+.teamSdValue{
+  font-size:13px;
+  font-weight:700;
+  color:var(--text);
+  opacity:0.9;
+  font-variant-numeric: tabular-nums;
+}
+
+.teamCell{ display:flex; flex-direction:column; gap:1px; }
+.teamNick{
+  font-weight:900;
+  font-size:14px;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  line-height:1.0;
+}
+.teamNick.tier-cel{ color: var(--tier-celestial); }
+.teamNick.tier-mid{ color: var(--tier-middle); }
+.teamNick.tier-und{ color: var(--tier-underground); }
+
+.teamNums{ display:flex; flex-direction:column; gap:1px; margin-top:2px; }
+.teamBase{
+  font-size:11px;
+  font-weight:500;
+  color:var(--muted);
+  opacity:0.75;
+  font-variant-numeric: tabular-nums;
+  line-height:1.0;
+}
+.teamCorr{
+  font-size:14px;
+  font-weight:800;
+  color: var(--mmr-final);
+  font-variant-numeric: tabular-nums;
+  letter-spacing:-0.2px;
+  line-height:1.0;
+}
+.teamCell.offrole{
+  border:1px dashed var(--accent);
+  border-radius: var(--radius-sm);
+  padding:4px;
+}
+
+/* =============================================
+   Player Quick Popup (Result Page)
+   ============================================= */
+.playerModal{
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  display: none;
+}
+.playerModal.show{ display:block; }
+
+.playerOverlay{
+  position:absolute;
+  inset:0;
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+}
+
+.playerPop{
+  position:absolute;
+  left:50%;
+  top:50%;
+  transform: translate(-50%, -50%) scale(0.96);
+  width: min(560px, calc(100vw - 28px));
+  border: 1px solid rgba(255,255,255,0.12);
+  background: linear-gradient(135deg, rgba(18,26,38,0.96), rgba(15,23,36,0.96));
+  border-radius: 22px;
+  box-shadow: 0 20px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset;
+  padding: 16px 16px 18px;
+  opacity: 0;
+  transition: opacity .18s ease, transform .18s ease;
+}
+.playerModal.show .playerPop{
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+
+.playerClose{
+  position:absolute;
+  right: 12px;
+  top: 12px;
+  padding: 10px 12px;
+  font-weight: 900;
+  font-size: 13px;
+}
+
+.playerHead{
+  display:flex;
+  flex-direction: column;
+  gap: 6px;
+  padding-right: 88px; /* close btn space */
+  margin-bottom: 12px;
+}
+.playerNick{
+  font-size: 18px;
+  font-weight: 950;
+  letter-spacing: -0.2px;
+}
+.playerSub{
+  display:flex;
+  gap: 8px;
+  align-items: center;
+  flex-wrap: wrap;
+  color: var(--muted);
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.pill2{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.03);
+  color: rgba(231,238,248,0.92);
+  border-radius: 999px;
+  padding: 6px 10px;
+  font-size: 12px;
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.playerGrid{
+  display:grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+}
+@media (max-width: 520px){
+  .playerGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+
+.playerStat{
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.18);
+  border-radius: 16px;
+  padding: 10px 10px;
+  display:flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+.playerStat .k{
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 900;
+  letter-spacing: -0.1px;
+}
+.playerStat .v{
+  font-size: 16px;
+  font-weight: 950;
+  letter-spacing: -0.2px;
+}
+
+.playerSection{
+  margin-top: 12px;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(0,0,0,0.16);
+  border-radius: 18px;
+  padding: 12px 12px;
+}
+.playerSectionTitle{
+  display:flex;
+  align-items:center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.playerSectionTitle .t{
+  font-size: 13px;
+  font-weight: 950;
+}
+.playerSectionTitle .hint{
+  font-size: 12px;
+  color: var(--muted);
+  font-weight: 700;
+}
+
+.champList{
+  display:flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.champRow{
+  display:grid;
+  grid-template-columns: 1fr auto;
+  gap: 10px;
+  align-items:center;
+  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.02);
+  border-radius: 14px;
+  padding: 10px 10px;
+}
+.champName{
+  font-size: 13px;
+  font-weight: 950;
+  overflow:hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.champMeta{
+  display:flex;
+  align-items:center;
+  gap: 8px;
+  justify-content:flex-end;
+}
+.champWin{
+  font-size: 12px;
+  font-weight: 950;
+  font-variant-numeric: tabular-nums;
+}
+.champGames{
+  font-size: 11px;
+  color: var(--muted);
+  font-weight: 900;
+  font-variant-numeric: tabular-nums;
+}
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <div class="panel">
+      <div class="topbar">
+        <div>
+          <div class="title">팀 결과</div>
+          <div class="meta" id="metaLine">불러오는 중…</div>
+        </div>
+        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+          <span class="badge" id="idBadge">ID: -</span>
+          <button class="btn" id="copyBtn" style="display:none;">링크 복사</button>
+        </div>
+      </div>
+    </div>
+
+    <div class="panel" id="content">
+      <div class="empty">불러오는 중…</div>
+    </div>
+  </div>
+
+  <script>
+'use strict';
+
+const resultId = "<?= resultId ?>";
+
+const $ = (id) => document.getElementById(id);
+
+function esc(s){
+  return String(s ?? '')
+    .replaceAll('&','&amp;').replaceAll('<','&lt;')
+    .replaceAll('>','&gt;').replaceAll('"','&quot;')
+    .replaceAll("'",'&#39;');
+}
+
+function renderError(msg){
+  $('metaLine').innerHTML = `<span class="err">에러: ${esc(msg)}</span>`;
+  $('content').innerHTML = `<div class="empty"><div class="err" style="font-weight:900; margin-bottom:6px;">불러오기 실패</div>${esc(msg)}</div>`;
+}
+
+const CONFIG = {
+  ROLES: ['TOP','JUG','MID','ADC','SUP'],
+  TIER: { CELESTIAL_MIN: 630, UNDERGROUND_MAX: 280 },
+  TIER_NAMES: { CELESTIAL: '천상계', MIDDLE: '중간계', UNDERGROUND: '지하계' },
+  MMR_PENALTY: { CELESTIAL: 30, MIDDLE: 50, SUPPORT: 100 }
+};
+
+const Utils = {
+  normalizePos(pos){
+    const v = String(pos || '').toUpperCase();
+    return ['TOP','JUG','MID','ADC','SUP','ALL'].includes(v) ? v : 'ALL';
+  },
+  tierClass(tierName){
+    if (tierName === CONFIG.TIER_NAMES.CELESTIAL) return 'cel';
+    if (tierName === CONFIG.TIER_NAMES.UNDERGROUND) return 'und';
+    return 'mid';
+  },
+  lerp(a,b,t){ return a + (b-a)*t; }
+};
+
+const MMRCalculator = {
+  tierByMMR(mmr){
+    const val = Number(mmr);
+    if (!Number.isFinite(val)) return CONFIG.TIER_NAMES.MIDDLE;
+    if (val >= CONFIG.TIER.CELESTIAL_MIN) return CONFIG.TIER_NAMES.CELESTIAL;
+    if (val <= CONFIG.TIER.UNDERGROUND_MAX) return CONFIG.TIER_NAMES.UNDERGROUND;
+    return CONFIG.TIER_NAMES.MIDDLE;
+  },
+
+  excelCorrected(baseMMR, assignedRole){
+    const W = Number(baseMMR);
+    if (!Number.isFinite(W)) return 0;
+    const role = Utils.normalizePos(assignedRole);
+    if (role === 'SUP') return W * 0.9;
+
+    const tierMul = W <= CONFIG.TIER.UNDERGROUND_MAX + 10 ? 0.9 : W >= CONFIG.TIER.CELESTIAL_MIN ? 1.2 : 1.05;
+    const sigmoid = 0.975 + ((1 / (1 + Math.exp((W - 300) / 50))) + (1 / (1 + Math.exp(-(W - 600) / 50)))) / 2 * 0.05;
+    return W * tierMul * sigmoid;
+  },
+
+  effective(p, assignedRole){
+    if (!p) return 0;
+    const role = Utils.normalizePos(assignedRole);
+    const primary = Utils.normalizePos(p.primary);
+    const baseRaw = Number(p.mmr);
+    if (!Number.isFinite(baseRaw)) return 0;
+    const tier = this.tierByMMR(baseRaw);
+
+    if (primary === 'ALL' || role === primary || tier === CONFIG.TIER_NAMES.UNDERGROUND){
+      return this.excelCorrected(baseRaw, role);
+    }
+
+    let mmrForCorrection = baseRaw;
+    if (role === 'SUP') mmrForCorrection = baseRaw - CONFIG.MMR_PENALTY.SUPPORT;
+    else mmrForCorrection = baseRaw - (tier === CONFIG.TIER_NAMES.CELESTIAL ? CONFIG.MMR_PENALTY.CELESTIAL : CONFIG.MMR_PENALTY.MIDDLE);
+
+    return this.excelCorrected(mmrForCorrection, role);
+  },
+
+  baseForDisplay(p, assignedRole){
+    if (!p) return { raw: NaN, penal: NaN, off: false };
+    const role = Utils.normalizePos(assignedRole);
+    const primary = Utils.normalizePos(p.primary);
+    const baseRaw = Number(p.mmr);
+    if (!Number.isFinite(baseRaw)) return { raw: NaN, penal: NaN, off: false };
+
+    const tier = this.tierByMMR(baseRaw);
+    let penal = baseRaw;
+
+    if (primary === 'ALL' || role === primary || tier === CONFIG.TIER_NAMES.UNDERGROUND){
+      return { raw: baseRaw, penal, off: primary !== 'ALL' && role !== primary && tier !== CONFIG.TIER_NAMES.UNDERGROUND };
+    }
+
+    if (role === 'SUP') penal = baseRaw - CONFIG.MMR_PENALTY.SUPPORT;
+    else penal = baseRaw - (tier === CONFIG.TIER_NAMES.CELESTIAL ? CONFIG.MMR_PENALTY.CELESTIAL : CONFIG.MMR_PENALTY.MIDDLE);
+
+    return { raw: baseRaw, penal, off: true };
+  }
+};
+
+// 규칙(인덱스와 동일)
+function validateTeam(team, getPlayer){
+  const bad = new Set();
+
+  const mid = getPlayer(team.slots.MID);
+  const adc = getPlayer(team.slots.ADC);
+  const jug = getPlayer(team.slots.JUG);
+
+  const tMid = mid ? MMRCalculator.tierByMMR(mid.mmr) : null;
+  const tAdc = adc ? MMRCalculator.tierByMMR(adc.mmr) : null;
+  const tJug = jug ? MMRCalculator.tierByMMR(jug.mmr) : null;
+
+  if (mid && adc && tMid === CONFIG.TIER_NAMES.UNDERGROUND && tAdc === CONFIG.TIER_NAMES.UNDERGROUND){
+    bad.add('MID'); bad.add('ADC');
+  }
+  if (mid && jug && tMid === CONFIG.TIER_NAMES.UNDERGROUND && tJug === CONFIG.TIER_NAMES.UNDERGROUND){
+    bad.add('MID'); bad.add('JUG');
+  }
+  return Array.from(bad);
+}
+
+function calcStats(team, getPlayer){
+  const vals = [];
+  for (const role of CONFIG.ROLES){
+    const nick = team.slots[role];
+    if (!nick) continue;
+    const p = getPlayer(nick);
+    if (!p) continue;
+    vals.push(MMRCalculator.effective(p, role));
+  }
+  const n = vals.length;
+  if (!n) return { avg: NaN, sd: NaN };
+  const avg = vals.reduce((a,b)=>a+b,0)/n;
+  if (n === 1) return { avg, sd: 0 };
+  const varSample = vals.reduce((acc,x)=>acc + (x-avg)*(x-avg),0)/(n-1);
+  return { avg, sd: Math.sqrt(varSample) };
+}
+
+function applyTeamAvgGradient(){
+  const els = Array.from(document.querySelectorAll('.teamAvgValue[data-avg]'));
+  if (!els.length) return;
+  const avgs = els.map(el => Number(el.dataset.avg)).filter(v => Number.isFinite(v));
+  if (!avgs.length) return;
+
+  const min = Math.min(...avgs);
+  const max = Math.max(...avgs);
+  const denom = (max - min) || 1;
+
+  const A_MIN = 0.12, A_MAX = 0.55;
+  const B_MIN = 0.20, B_MAX = 0.70;
+
+  // ok색(대충 고정)
+  const baseRgb = { r: 67, g: 209, b: 122 };
+
+  els.forEach(el => {
+    const v = Number(el.dataset.avg);
+    if (!Number.isFinite(v)) return;
+    const t = Math.min(1, Math.max(0, (v - min) / denom));
+    const a = Utils.lerp(A_MIN, A_MAX, t);
+    const b = Utils.lerp(B_MIN, B_MAX, t);
+    el.style.setProperty('--avg-rgb', `${baseRgb.r},${baseRgb.g},${baseRgb.b}`);
+    el.style.setProperty('--avg-alpha', a.toFixed(3));
+    el.style.setProperty('--avg-border-a', b.toFixed(3));
+    el.classList.add('avgGrad');
+  });
+}
+
+function renderTeamTable(teams, getPlayer){
+  const roles = CONFIG.ROLES;
+
+  $('content').innerHTML = `
+    <table class="teamTable">
+      <colgroup>
+        <col class="col-team">
+        ${roles.map(() => `<col class="col-slot">`).join('')}
+      </colgroup>
+      <thead>
+        <tr>
+          <th>팀</th>
+          ${roles.map(r => `<th data-role="${r}">${r}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${teams.map((t, i) => {
+          const st = calcStats(t, getPlayer);
+          return `
+            <tr data-team="${i}">
+              <td>
+                <div class="teamHead">
+                  <div class="teamNameBig">팀 ${esc(t.id)}</div>
+                  <div class="teamStats">
+                    <div class="teamAvgLine">
+                      <span class="teamAvgLabel">avg</span>
+                      <span class="teamAvgValue" data-avg="${Number.isFinite(st.avg) ? st.avg : ''}">
+                        ${Number.isFinite(st.avg) ? st.avg.toFixed(1) : '-'}
+                      </span>
+                    </div>
+                    <div class="teamSdLine">
+                      <span class="teamSdLabel">sd</span>
+                      <span class="teamSdValue">${Number.isFinite(st.sd) ? st.sd.toFixed(1) : '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              ${roles.map(role => renderCell(t, role, getPlayer)).join('')}
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // 규칙 위반 표시
+  const cellMap = new Map();
+  document.querySelectorAll('.teamTable td[data-team][data-role]').forEach(td => {
+    cellMap.set(`${td.dataset.team}|${td.dataset.role}`, td);
+  });
+
+  teams.forEach((t, teamIdx) => {
+    const badRoles = validateTeam(t, getPlayer);
+    badRoles.forEach(role => {
+      const td = cellMap.get(`${teamIdx}|${role}`);
+      if (td) td.classList.add('violate');
+    });
+  });
+
+  applyTeamAvgGradient();
+}
+
+function renderCell(team, role, getPlayer){
+  const nick = team.slots?.[role] || null;
+  if (!nick){
+    return `<td data-team="" data-role="" style="color:transparent">-</td>`;
+  }
+
+  const p = getPlayer(nick);
+  const baseInfo = p ? MMRCalculator.baseForDisplay(p, role) : { raw: NaN, penal: NaN, off: false };
+  const eff = p ? MMRCalculator.effective(p, role) : NaN;
+
+  const tierName = p ? MMRCalculator.tierByMMR(p.mmr) : CONFIG.TIER_NAMES.MIDDLE;
+  const tcls = Utils.tierClass(tierName);
+  const nickTierClass = (tcls === 'cel') ? 'tier-cel' : (tcls === 'und') ? 'tier-und' : 'tier-mid';
+
+  const isCaptain = team.captain && team.captain === nick;
+  const off = !!baseInfo.off;
+
+  const baseText = Number.isFinite(baseInfo.raw)
+    ? (off && baseInfo.penal !== baseInfo.raw ? `${baseInfo.raw.toFixed(0)}→${baseInfo.penal.toFixed(0)}` : `${baseInfo.raw.toFixed(0)}`)
+    : '-';
+
+  const effText = Number.isFinite(eff) ? eff.toFixed(1) : '-';
+
+  // data-team/data-role는 “규칙 위반 하이라이트”를 위해 붙임
+  // (팀별 index는 renderTeamTable에서 <tr data-team="${i}">로 이미 있고, 여기 td에 동일하게 붙여야 편함)
+  // 팀 index는 여기서 알 수 없으니, renderTeamTable에서 치환하기 귀찮아서
+  // 아래에서 td를 다시 찾기 어려움 → 간단히: renderTeamTable에서 문자열 치환 안 하고
+  // td에 data-team/data-role을 teamIdx로 넣는 게 제일 깔끔하지만,
+  // 여기서는 renderTeamTable에서 renderCell 호출할 때 teamIdx를 넘기는 방식이 더 좋음.
+  // => 아래 main에서 그 방식으로 다시 정의함.
+  return `
+    <td>
+      <div class="teamCell ${off ? 'offrole' : ''}">
+        <div class="teamNick ${nickTierClass}">
+          ${isCaptain ? '👑 ' : ''}${esc(nick)}
+        </div>
+        <div class="teamNums">
+          <div class="teamBase">${esc(baseText)}</div>
+          <div class="teamCorr"><b>${esc(effText)}</b></div>
+        </div>
+      </div>
+    </td>
+  `;
+}
+
+// renderCell을 teamIdx까지 포함하도록 “덮어쓰기”(위 설명 때문에)
+function renderCell2(teamIdx, team, role, getPlayer){
+  const nick = team.slots?.[role] || null;
+  if (!nick){
+    return `<td data-team="${teamIdx}" data-role="${role}" style="color:transparent">-</td>`;
+  }
+  const p = getPlayer(nick);
+  const baseInfo = p ? MMRCalculator.baseForDisplay(p, role) : { raw: NaN, penal: NaN, off: false };
+  const eff = p ? MMRCalculator.effective(p, role) : NaN;
+
+  const tierName = p ? MMRCalculator.tierByMMR(p.mmr) : CONFIG.TIER_NAMES.MIDDLE;
+  const tcls = Utils.tierClass(tierName);
+  const nickTierClass = (tcls === 'cel') ? 'tier-cel' : (tcls === 'und') ? 'tier-und' : 'tier-mid';
+
+  const isCaptain = team.captain && team.captain === nick;
+  const off = !!baseInfo.off;
+
+  const baseText = Number.isFinite(baseInfo.raw)
+    ? (off && baseInfo.penal !== baseInfo.raw ? `${baseInfo.raw.toFixed(0)}→${baseInfo.penal.toFixed(0)}` : `${baseInfo.raw.toFixed(0)}`)
+    : '-';
+
+  const effText = Number.isFinite(eff) ? eff.toFixed(1) : '-';
+
+  return `
+    <td data-team="${teamIdx}" data-role="${role}">
+      <div class="teamCell ${off ? 'offrole' : ''}">
+        <div class="teamNick ${nickTierClass}">
+          ${isCaptain ? '👑 ' : ''}${esc(nick)}
+        </div>
+        <div class="teamNums">
+          <div class="teamBase">${esc(baseText)}</div>
+          <div class="teamCorr"><b>${esc(effText)}</b></div>
+        </div>
+      </div>
+    </td>
+  `;
+}
+
+function renderTeamTable2(teams, getPlayer){
+  const roles = CONFIG.ROLES;
+
+  $('content').innerHTML = `
+    <table class="teamTable">
+      <colgroup>
+        <col class="col-team">
+        ${roles.map(() => `<col class="col-slot">`).join('')}
+      </colgroup>
+      <thead>
+        <tr>
+          <th>팀</th>
+          ${roles.map(r => `<th data-role="${r}">${r}</th>`).join('')}
+        </tr>
+      </thead>
+      <tbody>
+        ${teams.map((t, teamIdx) => {
+          const st = calcStats(t, getPlayer);
+          return `
+            <tr data-team="${teamIdx}">
+              <td>
+                <div class="teamHead">
+                  <div class="teamNameBig">팀 ${esc(t.id)}</div>
+                  <div class="teamStats">
+                    <div class="teamAvgLine">
+                      <span class="teamAvgLabel">avg</span>
+                      <span class="teamAvgValue" data-avg="${Number.isFinite(st.avg) ? st.avg : ''}">
+                        ${Number.isFinite(st.avg) ? st.avg.toFixed(1) : '-'}
+                      </span>
+                    </div>
+                    <div class="teamSdLine">
+                      <span class="teamSdLabel">sd</span>
+                      <span class="teamSdValue">${Number.isFinite(st.sd) ? st.sd.toFixed(1) : '-'}</span>
+                    </div>
+                  </div>
+                </div>
+              </td>
+              ${roles.map(role => renderCell2(teamIdx, t, role, getPlayer)).join('')}
+            </tr>
+          `;
+        }).join('')}
+      </tbody>
+    </table>
+  `;
+
+  // 위반 표시
+  const cellMap = new Map();
+  document.querySelectorAll('.teamTable td[data-team][data-role]').forEach(td => {
+    cellMap.set(`${td.dataset.team}|${td.dataset.role}`, td);
+  });
+
+  teams.forEach((t, teamIdx) => {
+    const badRoles = validateTeam(t, getPlayer);
+    badRoles.forEach(role => {
+      const td = cellMap.get(`${teamIdx}|${role}`);
+      if (td) td.classList.add('violate');
+    });
+  });
+
+  applyTeamAvgGradient();
+}
+
+(function main(){
+  $('idBadge').textContent = `ID: ${resultId || '-'}`;
+
+  // 링크 복사
+  const copyBtn = $('copyBtn');
+  copyBtn.style.display = 'inline-flex';
+  copyBtn.addEventListener('click', async () => {
+    try{
+      await navigator.clipboard.writeText(location.href);
+      copyBtn.textContent = '복사됨';
+      setTimeout(() => copyBtn.textContent = '링크 복사', 1200);
+    }catch(e){
+      alert('복사 실패');
+    }
+  });
+
+  if (!resultId){
+    renderError('resultId가 없습니다. (URL에 ?page=result&id=... 필요)');
+    return;
+  }
+
+  // 1) 결과 먼저 로드
+  google.script.run
+    .withSuccessHandler((res) => {
+      if (!res || !res.ok) return renderError(res?.error || 'unknown error');
+
+      const payload = res.payload || {};
+      const createdAt = res.createdAt || '';
+
+      $('metaLine').textContent = createdAt ? `생성: ${createdAt}` : '생성일 정보 없음';
+
+      const rawTeams = Array.isArray(payload.teams) ? payload.teams : [];
+      const teams = rawTeams.map(t => ({
+        id: t?.id ?? '?',
+        captain: t?.captain || null,
+        slots: t?.slots || {}
+      }));
+
+      // 2) players 로드해서 index와 동일 계산 렌더
+      google.script.run
+        .withSuccessHandler((pRes) => {
+          if (!pRes || !pRes.ok) return renderError(pRes?.error || 'players load failed');
+
+          const players = Array.isArray(pRes.players) ? pRes.players : [];
+          const byNick = new Map(players.map(p => [p.nick, p]));
+
+          const getPlayer = (nick) => byNick.get(nick) || null;
+
+          // tier 필드가 비어있을 수 있으니 여기서 보정(선택)
+          players.forEach(p => {
+            if (!p.tier) p.tier = MMRCalculator.tierByMMR(p.mmr);
+          });
+
+          renderTeamTable2(teams, getPlayer);
+          PlayerPopup.wire(getPlayer);
+        })
+        .withFailureHandler((err) => renderError(err?.message || String(err)))
+        .getPlayers();
+    })
+    .withFailureHandler((err) => renderError(err?.message || String(err)))
+    .getTeamResult(resultId);
+})();
+
+function roleLabel(role){
+  const m = { TOP:'탑', JUG:'정글', MID:'미드', ADC:'원딜', SUP:'서폿', ALL:'올라운더' };
+  return m[String(role||'').toUpperCase()] || '올라운더';
+}
+
+function pct(n){
+  const v = Number(n);
+  if (!Number.isFinite(v)) return '-';
+  return `${(v*100).toFixed(1)}%`;
+}
+
+// ✅ 지금은 “와꾸만”: 닉네임 → 더미 요약 데이터
+// 나중에: DB/시트 붙이면 여기만 바꾸면 됨.
+function getQuickProfileDummy(nick, getPlayer){
+  const p = getPlayer ? getPlayer(nick) : null;
+
+  // 주력라인: player.primary 우선, 없으면 ALL
+  const primary = p?.primary ? Utils.normalizePos(p.primary) : 'ALL';
+
+  // tier: p.tier가 없으면 mmr로 산출
+  const tierName = p?.mmr != null ? MMRCalculator.tierByMMR(p.mmr) : CONFIG.TIER_NAMES.MIDDLE;
+
+  // 아래는 더미 (나중에 실데이터로 교체)
+  const seed = Array.from(String(nick||'')).reduce((a,c)=>a + c.charCodeAt(0), 0);
+  const wrAll = ((seed % 31) + 45) / 100;     // 45%~75%
+  const wr10  = ((seed % 41) + 35) / 100;     // 35%~75%
+  const games = (seed % 400) + 60;            // 60~459
+
+  const champs = [
+    { name: '챔피언A', wr: Math.min(0.95, wrAll + 0.08), games: Math.max(5, (seed % 60) + 10) },
+    { name: '챔피언B', wr: Math.max(0.10, wrAll - 0.03), games: Math.max(5, (seed % 50) + 8) },
+    { name: '챔피언C', wr: Math.min(0.95, wrAll + 0.02), games: Math.max(5, (seed % 40) + 6) }
+  ];
+
+  return {
+    nick,
+    mainLine: roleLabel(primary),
+    tier: tierName,
+    wrAll,
+    wr10,
+    games,
+    champs
+  };
+}
+
+const PlayerPopup = {
+  open(profile){
+    const m = document.getElementById('playerModal');
+    if (!m) return;
+
+    m.classList.add('show');
+    m.setAttribute('aria-hidden', 'false');
+
+    const nickEl = document.getElementById('playerPopNick');
+    const mainEl = document.getElementById('playerPopMainLine');
+    const tierEl = document.getElementById('playerPopTier');
+    const wrAllEl = document.getElementById('playerPopWrAll');
+    const wr10El = document.getElementById('playerPopWr10');
+    const gamesEl = document.getElementById('playerPopGames');
+    const champsEl = document.getElementById('playerPopChamps');
+
+    nickEl.textContent = profile?.nick || '-';
+    mainEl.textContent = `주력 ${profile?.mainLine || '-'}`;
+    tierEl.textContent = `티어 ${profile?.tier || '-'}`;
+
+    wrAllEl.textContent = pct(profile?.wrAll);
+    wr10El.textContent = pct(profile?.wr10);
+    gamesEl.textContent = Number.isFinite(Number(profile?.games)) ? `${profile.games}` : '-';
+
+    const champs = Array.isArray(profile?.champs) ? profile.champs.slice(0,3) : [];
+    champsEl.innerHTML = champs.length
+      ? champs.map(c => `
+          <div class="champRow">
+            <div class="champName">${esc(c?.name || '-')}</div>
+            <div class="champMeta">
+              <span class="champWin">${pct(c?.wr)}</span>
+              <span class="champGames">${Number(c?.games)||0}G</span>
+            </div>
+          </div>
+        `).join('')
+      : `<div class="empty">표시할 챔프 데이터가 없음</div>`;
+  },
+
+  close(){
+    const m = document.getElementById('playerModal');
+    if (!m) return;
+    m.classList.remove('show');
+    m.setAttribute('aria-hidden', 'true');
+  },
+
+  wire(getPlayer){
+    const m = document.getElementById('playerModal');
+    const closeBtn = document.getElementById('playerCloseBtn');
+    if (!m) return;
+
+    // overlay close
+    m.addEventListener('click', (e) => {
+      if (e.target.closest('[data-close="1"]')) this.close();
+    });
+    if (closeBtn) closeBtn.addEventListener('click', () => this.close());
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') this.close();
+    });
+
+    // ✅ 팀 테이블에서 닉네임 클릭 시 오픈 (event delegation)
+    const content = document.getElementById('content');
+    if (!content) return;
+
+    content.addEventListener('click', (e) => {
+      const nickEl = e.target.closest('.teamNick');
+      if (!nickEl) return;
+
+      const nick = nickEl.textContent.replace('👑','').trim();
+      if (!nick) return;
+
+      const profile = getQuickProfileDummy(nick, getPlayer);
+      this.open(profile);
+    });
+  }
+};
+</script>
+<div class="playerModal" id="playerModal" aria-hidden="true">
+  <div class="playerOverlay" data-close="1"></div>
+
+  <div class="playerPop" role="dialog" aria-modal="true" aria-label="플레이어 요약">
+    <button class="playerClose btn" id="playerCloseBtn" title="닫기">닫기</button>
+
+    <div class="playerHead">
+      <div class="playerNick" id="playerPopNick">-</div>
+      <div class="playerSub">
+        <span class="pill2" id="playerPopMainLine">주력 -</span>
+        <span class="pill2" id="playerPopTier">티어 -</span>
+      </div>
+    </div>
+
+    <div class="playerGrid">
+      <div class="playerStat">
+        <div class="k">전체 승률</div>
+        <div class="v" id="playerPopWrAll">-</div>
+      </div>
+      <div class="playerStat">
+        <div class="k">최근 10 승률</div>
+        <div class="v" id="playerPopWr10">-</div>
+      </div>
+      <div class="playerStat">
+        <div class="k">표본</div>
+        <div class="v" id="playerPopGames">-</div>
+      </div>
+    </div>
+
+    <div class="playerSection">
+      <div class="playerSectionTitle">
+        <div class="t">주요 챔피언 TOP3</div>
+        <div class="hint">승률/게임수</div>
+      </div>
+      <div class="champList" id="playerPopChamps"></div>
+    </div>
+  </div>
+</div>
+</body>
+</html>
