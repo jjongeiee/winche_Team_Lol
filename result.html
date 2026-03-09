@@ -3,28 +3,39 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <link rel="stylesheet" as="style" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+
+  <!-- ✅ 수정: as="style" 제거 (일반 stylesheet 링크) -->
+  <link rel="stylesheet" crossorigin href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable.min.css" />
+
   <title>팀 결과</title>
   <style>
-      :root{
-        --bg:#0b0f14; --panel:#0f1520; --card:#121a26; --card2:#0f1724; --line:#1f2a3a;
-        --text:#e7eef8; --muted:#9fb0c3; --accent:#4da3ff; --ok:#43d17a; --danger:#ff5b5b;
+    :root{
+      --bg:#0b0f14; --panel:#0f1520; --card:#121a26; --card2:#0f1724; --line:#1f2a3a;
+      --text:#e7eef8; --muted:#9fb0c3; --accent:#4da3ff; --ok:#43d17a; --danger:#ff5b5b;
 
-        --tier-celestial:#4da3ff; --tier-celestial-bg: rgba(77,163,255,0.08); --tier-celestial-border: rgba(77,163,255,0.45);
-        --tier-middle:#43d17a;    --tier-middle-bg: rgba(67,209,122,0.08);  --tier-middle-border: rgba(67,209,122,0.45);
-        --tier-underground:#ff4fa3; --tier-underground-bg: rgba(255,79,163,0.08); --tier-underground-border: rgba(255,79,163,0.45);
+      --tier-celestial:#4da3ff; --tier-celestial-bg: rgba(77,163,255,0.08); --tier-celestial-border: rgba(77,163,255,0.45);
+      --tier-middle:#43d17a;    --tier-middle-bg: rgba(67,209,122,0.08);  --tier-middle-border: rgba(67,209,122,0.45);
+      --tier-underground:#ff4fa3; --tier-underground-bg: rgba(255,79,163,0.08); --tier-underground-border: rgba(255,79,163,0.45);
 
-        --pos-top:#8b5cf6; --pos-jug:#ef4444; --pos-mid:#3b82f6; --pos-adc:#f59e0b; --pos-sup:#10b981;
-        --radius-sm: 6px; --radius-lg: 14px;
-        --mmr-final: rgba(231,238,248,0.92);
-      }
+      --pos-top:#8b5cf6; --pos-jug:#ef4444; --pos-mid:#3b82f6; --pos-adc:#f59e0b; --pos-sup:#10b981;
+      --radius-sm: 6px; --radius-lg: 14px;
+      --mmr-final: rgba(231,238,248,0.92);
+    }
+
     *{box-sizing:border-box}
     body{
       margin:0; font-family:"Pretendard Variable", Pretendard, system-ui, -apple-system, sans-serif;
       background:var(--bg); color:var(--text);
       padding:16px;
     }
-    .wrap{max-width:980px; margin:0 auto; display:flex; flex-direction:column; gap:12px;}
+    .wrap{
+      max-width: 1280px;              
+      margin: 0 auto;
+      display: grid;
+      grid-template-columns: minmax(0, 1fr) 380px;  
+      gap: 12px;
+      align-items: start;
+    }
     .panel{ background:var(--panel); border:1px solid var(--line); border-radius:var(--radius-lg); padding:14px; }
     .topbar{display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap;}
     .title{font-size:18px; font-weight:900; letter-spacing:-0.2px}
@@ -52,48 +63,53 @@
     }
 
     .teamTable{
-  width:100%;
-  border-collapse: separate;
-  border-spacing: 0;
-  font-size:12px;
-  table-layout: fixed;
-}
-.teamTable col.col-team{ width:140px; }
-.teamTable col.col-slot{ width:120px; }
-.teamTable th, .teamTable td{
-  border:1px solid var(--line);
-  padding:6px;
-  text-align:center;
-  background: rgba(0,0,0,0.12);
-  overflow:hidden;
-}
-.teamTable th{ font-weight:700; background:rgba(255,255,255,0.04); color:var(--muted); }
-.teamTable td{ font-weight:800; }
+      width:100%;
+      border-collapse: separate;
+      border-spacing: 0;
+      font-size:12px;
+      table-layout: fixed;
+    }
+    .teamTable col.col-team{ width:140px; }
+    .teamTable col.col-slot{ width:120px; }
+    .teamTable th, .teamTable td{
+      border:1px solid var(--line);
+      padding:6px;
+      text-align:center;
+      background: rgba(0,0,0,0.12);
+      overflow:hidden;
+    }
+    .teamTable th{ font-weight:700; background:rgba(255,255,255,0.04); color:var(--muted); }
+    .teamTable td{ font-weight:800; }
 
-.teamTable thead th{ padding-top:10px; padding-bottom:12px; }
-.teamTable thead th[data-role="TOP"]{ color: var(--pos-top); box-shadow: inset 0 -3px 0 rgba(139,92,246,0.9); }
-.teamTable thead th[data-role="JUG"]{ color: var(--pos-jug); box-shadow: inset 0 -3px 0 rgba(239,68,68,0.9); }
-.teamTable thead th[data-role="MID"]{ color: var(--pos-mid); box-shadow: inset 0 -3px 0 rgba(59,130,246,0.9); }
-.teamTable thead th[data-role="ADC"]{ color: var(--pos-adc); box-shadow: inset 0 -3px 0 rgba(245,158,11,0.9); }
-.teamTable thead th[data-role="SUP"]{ color: var(--pos-sup); box-shadow: inset 0 -3px 0 rgba(16,185,129,0.9); }
+    .teamTable thead th{ padding-top:10px; padding-bottom:12px; }
+    .teamTable thead th[data-role="TOP"]{ color: var(--pos-top); box-shadow: inset 0 -3px 0 rgba(139,92,246,0.9); }
+    .teamTable thead th[data-role="JUG"]{ color: var(--pos-jug); box-shadow: inset 0 -3px 0 rgba(239,68,68,0.9); }
+    .teamTable thead th[data-role="MID"]{ color: var(--pos-mid); box-shadow: inset 0 -3px 0 rgba(59,130,246,0.9); }
+    .teamTable thead th[data-role="ADC"]{ color: var(--pos-adc); box-shadow: inset 0 -3px 0 rgba(245,158,11,0.9); }
+    .teamTable thead th[data-role="SUP"]{ color: var(--pos-sup); box-shadow: inset 0 -3px 0 rgba(16,185,129,0.9); }
 
-.teamTable td.violate{
-  background: rgba(255,91,91,0.12);
-  border-color: rgba(255,91,91,0.6);
-}
-.teamTable td.violate .teamNick{ color:#ffb4b4; }
+    .teamTable td.violate{
+      background: rgba(255,91,91,0.12);
+      border-color: rgba(255,91,91,0.6);
+    }
+    .teamTable td.violate .teamNick{ color:#ffb4b4; }
+
     .grid{display:grid; grid-template-columns:repeat(2, minmax(0, 1fr)); gap:12px;}
     @media (max-width: 900px){ .grid{grid-template-columns:1fr;} }
+
     .teamCard{
       background:linear-gradient(135deg, rgba(255,255,255,0.02), rgba(255,255,255,0.01));
       border:1px solid var(--line);
-      border-radius:var(--radius);
+
+      /* ✅ 수정: --radius 없음 → --radius-lg로 변경 */
+      border-radius:var(--radius-lg);
+
       padding:12px;
       display:flex;
       flex-direction:column;
       gap:10px;
     }
-    
+
     .teamHead{
       display:grid;
       grid-template-columns: 40% 60%;
@@ -113,10 +129,14 @@
     th{color:var(--muted); font-weight:900; background:rgba(255,255,255,0.04)}
     td{font-weight:900}
     .captain{color:var(--accent)}
+
     .empty{
       padding:14px;
       border:1px dashed var(--line);
-      border-radius:var(--radius);
+
+      /* ✅ 수정: --radius 없음 → --radius-lg로 변경 */
+      border-radius:var(--radius-lg);
+
       color:var(--muted);
       font-size:13px;
       text-align:center;
@@ -125,302 +145,514 @@
     code{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace}
 
     .teamNameBig{
-  font-size:18px;
-  font-weight:950;
-  letter-spacing:-0.4px;
-  text-align:left;
-  padding-left:2px;
-  white-space:nowrap;
-}
-.teamStats{ display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
-.teamAvgLine, .teamSdLine{
-  display:flex;
-  align-items:baseline;
-  gap:6px;
-  justify-content:flex-start;
-  font-weight:600;
-}
-.teamAvgLabel, .teamSdLabel{
-  font-size:11px;
-  color:var(--muted);
-  font-weight:800;
-  text-transform: lowercase;
-}
-.teamAvgValue{
-  font-size:16px;
-  font-weight:900;
-  color:var(--text);
-  font-variant-numeric: tabular-nums;
-}
-.teamAvgValue.avgGrad{
-  position:relative;
-  display:inline-block;
-  padding:1px 8px;
-  border-radius:999px;
-  color:var(--text);
-  font-weight:950;
-  letter-spacing:-0.2px;
-  background: rgba(var(--avg-rgb), var(--avg-alpha));
-  border: 1px solid rgba(var(--avg-rgb), var(--avg-border-a));
-  box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset, 0 6px 18px rgba(0,0,0,0.25);
-}
-.teamAvgValue.avgGrad::after{
-  content:"";
-  position:absolute;
-  inset:-6px -10px;
-  border-radius:999px;
-  background: radial-gradient(closest-side, rgba(var(--avg-rgb), calc(var(--avg-alpha) * 0.55)), transparent 70%);
-  filter: blur(6px);
-  opacity: 0.9;
-  z-index:-1;
-}
-.teamSdValue{
-  font-size:13px;
-  font-weight:700;
-  color:var(--text);
-  opacity:0.9;
-  font-variant-numeric: tabular-nums;
+      font-size:18px;
+      font-weight:950;
+      letter-spacing:-0.4px;
+      text-align:left;
+      padding-left:2px;
+      white-space:nowrap;
+    }
+    .teamStats{ display:flex; flex-direction:column; gap:4px; align-items:flex-start; }
+    .teamAvgLine, .teamSdLine{
+      display:flex;
+      align-items:baseline;
+      gap:6px;
+      justify-content:flex-start;
+      font-weight:600;
+    }
+    .teamAvgLabel, .teamSdLabel{
+      font-size:11px;
+      color:var(--muted);
+      font-weight:800;
+      text-transform: lowercase;
+    }
+    .teamAvgValue{
+      font-size:16px;
+      font-weight:900;
+      color:var(--text);
+      font-variant-numeric: tabular-nums;
+    }
+    .teamAvgValue.avgGrad{
+      position:relative;
+      display:inline-block;
+      padding:1px 8px;
+      border-radius:999px;
+      color:var(--text);
+      font-weight:950;
+      letter-spacing:-0.2px;
+      background: rgba(var(--avg-rgb), var(--avg-alpha));
+      border: 1px solid rgba(var(--avg-rgb), var(--avg-border-a));
+      box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset, 0 6px 18px rgba(0,0,0,0.25);
+    }
+    .teamAvgValue.avgGrad::after{
+      content:"";
+      position:absolute;
+      inset:-6px -10px;
+      border-radius:999px;
+      background: radial-gradient(closest-side, rgba(var(--avg-rgb), calc(var(--avg-alpha) * 0.55)), transparent 70%);
+      filter: blur(6px);
+      opacity: 0.9;
+      z-index:-1;
+    }
+    .teamSdValue{
+      font-size:13px;
+      font-weight:700;
+      color:var(--text);
+      opacity:0.9;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .teamCell{
+      display:flex;
+      flex-direction:column;
+      gap:1px;
+      align-items:center;
+      position:relative;
+    }
+    .teamNick.tier-cel{ color: var(--tier-celestial); }
+    .teamNick.tier-mid{ color: var(--tier-middle); }
+    .teamNick.tier-und{ color: var(--tier-underground); }
+
+
+    .teamNick{
+      cursor:pointer;
+      display:block;            /* ✅ inline-flex 제거 */
+      text-align:center;        /* ✅ 가운데 */
+      padding: 2px 4px;         /* 필요하면 조절 */
+      border-radius: 8px;
+      user-select:none;
+      transition: background .15s ease, transform .06s ease, text-decoration-color .15s ease;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      line-height:1.0;
+    }
+
+/* hover시 살짝 하이라이트 + 밑줄 느낌 */
+.teamNick:hover{
+  background: rgba(255,255,255,0.05);
+  text-decoration: underline;
+  text-decoration-color: rgba(231,238,248,0.35);
+  text-underline-offset: 3px;
 }
 
-.teamCell{ display:flex; flex-direction:column; gap:1px; }
-.teamNick{
-  font-weight:900;
-  font-size:14px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow: ellipsis;
-  line-height:1.0;
-}
-.teamNick.tier-cel{ color: var(--tier-celestial); }
-.teamNick.tier-mid{ color: var(--tier-middle); }
-.teamNick.tier-und{ color: var(--tier-underground); }
-
-.teamNums{ display:flex; flex-direction:column; gap:1px; margin-top:2px; }
-.teamBase{
-  font-size:11px;
-  font-weight:500;
-  color:var(--muted);
-  opacity:0.75;
-  font-variant-numeric: tabular-nums;
-  line-height:1.0;
-}
-.teamCorr{
-  font-size:14px;
-  font-weight:800;
-  color: var(--mmr-final);
-  font-variant-numeric: tabular-nums;
-  letter-spacing:-0.2px;
-  line-height:1.0;
-}
-.teamCell.offrole{
-  border:1px dashed var(--accent);
-  border-radius: var(--radius-sm);
-  padding:4px;
+/* 클릭 순간 눌리는 느낌 */
+.teamNick:active{
+  transform: translateY(1px);
 }
 
-/* =============================================
-   Player Quick Popup (Result Page)
-   ============================================= */
-.playerModal{
-  position: fixed;
-  inset: 0;
-  z-index: 2500;
-  display: none;
-}
-.playerModal.show{ display:block; }
-
-.playerOverlay{
-  position:absolute;
-  inset:0;
-  background: rgba(0,0,0,0.55);
-  backdrop-filter: blur(6px);
-}
-
-.playerPop{
-  position:absolute;
-  left:50%;
-  top:50%;
-  transform: translate(-50%, -50%) scale(0.96);
-  width: min(560px, calc(100vw - 28px));
-  border: 1px solid rgba(255,255,255,0.12);
-  background: linear-gradient(135deg, rgba(18,26,38,0.96), rgba(15,23,36,0.96));
-  border-radius: 22px;
-  box-shadow: 0 20px 80px rgba(0,0,0,0.55), 0 0 0 1px rgba(255,255,255,0.06) inset;
-  padding: 16px 16px 18px;
+/* ↗ 아이콘: 기본 숨김, hover때만 표시 */
+.teamNick .nickHint{
   opacity: 0;
-  transition: opacity .18s ease, transform .18s ease;
+  transform: translateX(-2px);
+  transition: opacity .15s ease, transform .15s ease;
+  font-size: 12px;
+  color: rgba(231,238,248,0.55);
 }
-.playerModal.show .playerPop{
+
+.teamNick:hover .nickHint{
   opacity: 1;
-  transform: translate(-50%, -50%) scale(1);
+  transform: translateX(0);
 }
 
-.playerClose{
-  position:absolute;
-  right: 12px;
-  top: 12px;
-  padding: 10px 12px;
-  font-weight: 900;
-  font-size: 13px;
+/* ✅ 현재 선택(우측 패널에 표시 중인) 닉네임 강조 */
+.teamNick.active{
+  background: rgba(77,163,255,0.12);
+  border: 1px solid rgba(77,163,255,0.55);
+  box-shadow: 0 0 0 1px rgba(0,0,0,0.25) inset, 0 10px 24px rgba(0,0,0,0.35);
 }
 
-.playerHead{
-  display:flex;
-  flex-direction: column;
-  gap: 6px;
-  padding-right: 88px; /* close btn space */
-  margin-bottom: 12px;
+.teamNick.active .nickText{
+  text-decoration: underline;
+  text-decoration-color: rgba(77,163,255,0.55);
+  text-underline-offset: 3px;
 }
-.playerNick{
-  font-size: 18px;
+
+    .teamNums{ display:flex; flex-direction:column; gap:1px; margin-top:2px; }
+    .teamBase{
+      font-size:11px;
+      font-weight:500;
+      color:var(--muted);
+      opacity:0.75;
+      font-variant-numeric: tabular-nums;
+      line-height:1.0;
+    }
+    .teamCorr{
+      font-size:14px;
+      font-weight:800;
+      color: var(--mmr-final);
+      font-variant-numeric: tabular-nums;
+      letter-spacing:-0.2px;
+      line-height:1.0;
+    }
+    .teamCell.offrole{
+      border:1px dashed var(--accent);
+      border-radius: var(--radius-sm);
+      padding:4px;
+    }
+
+    .teamCell .nickHint{
+      position:absolute;
+      top: 6px;
+      right: 6px;
+      font-size: 12px;
+      color: rgba(231,238,248,0.55);
+      opacity: 0;
+      transform: translateX(-2px);
+      transition: opacity .15s ease, transform .15s ease;
+      pointer-events: none; /* ✅ 아이콘이 클릭 방해 안 하게 */
+    }
+
+    .teamCell:hover .nickHint{
+      opacity: 1;
+      transform: translateX(0);
+    }
+
+    .playerHead{
+      display:flex;
+      flex-direction: column;
+      gap: 6px;
+      padding-right: 88px; /* close btn space */
+      margin-bottom: 12px;
+    }
+    .playerNick{
+      font-size: 18px;
+      font-weight: 950;
+      letter-spacing: -0.2px;
+    }
+    .playerSub{
+      display:flex;
+      gap: 8px;
+      align-items: center;
+      flex-wrap: wrap;
+      color: var(--muted);
+      font-size: 12px;
+      font-weight: 700;
+    }
+
+    .pill2{
+      display:inline-flex;
+      align-items:center;
+      justify-content:center;
+      border: 1px solid rgba(255,255,255,0.12);
+      background: rgba(255,255,255,0.03);
+      color: rgba(231,238,248,0.92);
+      border-radius: 999px;
+      padding: 6px 10px;
+      font-size: 12px;
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+    }
+
+    .playerGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+    @media (max-width: 520px){
+      .playerGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    }
+
+    .playerStat{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.18);
+      border-radius: 16px;
+      padding: 10px 10px;
+      display:flex;
+      flex-direction: column;
+      gap: 4px;
+      min-width: 0;
+    }
+    .playerStat .k{
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing: -0.1px;
+    }
+    .playerStat .v{
+      font-size: 16px;
+      font-weight: 950;
+      letter-spacing: -0.2px;
+    }
+
+    .playerSection{
+      margin-top: 12px;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(0,0,0,0.16);
+      border-radius: 18px;
+      padding: 12px 12px;
+    }
+    .playerSectionTitle{
+      display:flex;
+      align-items:center;
+      justify-content: space-between;
+      gap: 8px;
+      margin-bottom: 10px;
+    }
+    .playerSectionTitle .t{
+      font-size: 13px;
+      font-weight: 950;
+    }
+    .playerSectionTitle .hint{
+      font-size: 12px;
+      color: var(--muted);
+      font-weight: 700;
+    }
+
+    .champList{
+      display:flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .champRow{
+      position: relative;
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.02);
+      border-radius: 14px;
+      padding: 11px 12px;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .champBar{
+      position:absolute;
+      left:0;
+      top:0;
+      bottom:0;
+      width: var(--bar-pct, 0%);
+      background: linear-gradient(90deg, rgba(77,163,255,0.22), rgba(77,163,255,0.08));
+      border-right: 1px solid rgba(77,163,255,0.28);
+      z-index: 0;
+    }
+
+    .champRowInner{
+      position: relative;
+      z-index: 1;
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap: 10px;
+    }
+
+    .champName{
+      font-size: 13px;
+      font-weight: 950;
+      overflow:hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      min-width: 0;
+      flex: 1 1 auto;
+    }
+
+    .champMeta{
+      display:flex;
+      align-items:baseline;
+      gap: 8px;
+      justify-content:flex-end;
+      flex: 0 0 auto;
+    }
+
+    .champWin{
+      font-size: 12px;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .champGames{
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 900;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .miniStatGrid{
+      display:grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .miniStat{
+      border: 1px solid rgba(255,255,255,0.10);
+      background: rgba(255,255,255,0.02);
+      border-radius: 14px;
+      padding: 10px 8px;
+      min-width: 0;
+      text-align:center;
+    }
+
+    .miniStat .k{
+      font-size: 11px;
+      color: var(--muted);
+      font-weight: 900;
+      letter-spacing: -0.1px;
+      margin-bottom: 4px;
+    }
+
+    .miniStat .v{
+      font-size: 15px;
+      font-weight: 950;
+      letter-spacing: -0.2px;
+      font-variant-numeric: tabular-nums;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+
+    .sidePanel{
+      background: var(--panel);
+      border: 1px solid var(--line);
+      border-radius: var(--radius-lg);
+      padding: 14px;
+      position: sticky;
+      top: 16px;             /* body padding과 맞춤 */
+      height: calc(100vh - 32px);
+      overflow: auto;
+    }
+
+.sideTitle{
+  font-size: 14px;
   font-weight: 950;
-  letter-spacing: -0.2px;
-}
-.playerSub{
-  display:flex;
-  gap: 8px;
-  align-items: center;
-  flex-wrap: wrap;
-  color: var(--muted);
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.pill2{
-  display:inline-flex;
-  align-items:center;
-  justify-content:center;
-  border: 1px solid rgba(255,255,255,0.12);
-  background: rgba(255,255,255,0.03);
   color: rgba(231,238,248,0.92);
-  border-radius: 999px;
-  padding: 6px 10px;
-  font-size: 12px;
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
-  white-space: nowrap;
-}
-
-.playerGrid{
-  display:grid;
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 8px;
-}
-@media (max-width: 520px){
-  .playerGrid{ grid-template-columns: repeat(2, minmax(0, 1fr)); }
-}
-
-.playerStat{
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.18);
-  border-radius: 16px;
-  padding: 10px 10px;
-  display:flex;
-  flex-direction: column;
-  gap: 4px;
-  min-width: 0;
-}
-.playerStat .k{
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 900;
-  letter-spacing: -0.1px;
-}
-.playerStat .v{
-  font-size: 16px;
-  font-weight: 950;
-  letter-spacing: -0.2px;
-}
-
-.playerSection{
-  margin-top: 12px;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(0,0,0,0.16);
-  border-radius: 18px;
-  padding: 12px 12px;
-}
-.playerSectionTitle{
-  display:flex;
-  align-items:center;
-  justify-content: space-between;
-  gap: 8px;
   margin-bottom: 10px;
 }
-.playerSectionTitle .t{
-  font-size: 13px;
-  font-weight: 950;
-}
-.playerSectionTitle .hint{
-  font-size: 12px;
+
+.sideEmpty{
+  border: 1px dashed var(--line);
+  border-radius: var(--radius-lg);
+  padding: 12px;
   color: var(--muted);
-  font-weight: 700;
+  font-weight: 800;
+  font-size: 13px;
+  text-align: left;
 }
 
-.champList{
+.sideCloseRow{
   display:flex;
-  flex-direction: column;
-  gap: 8px;
-}
-.champRow{
-  display:grid;
-  grid-template-columns: 1fr auto;
-  gap: 10px;
-  align-items:center;
-  border: 1px solid rgba(255,255,255,0.10);
-  background: rgba(255,255,255,0.02);
-  border-radius: 14px;
-  padding: 10px 10px;
-}
-.champName{
-  font-size: 13px;
-  font-weight: 950;
-  overflow:hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.champMeta{
-  display:flex;
-  align-items:center;
-  gap: 8px;
   justify-content:flex-end;
+  margin-bottom: 8px;
 }
-.champWin{
+
+.sideCloseBtn{
+  padding: 8px 10px;
+  border-radius: 12px;
   font-size: 12px;
-  font-weight: 950;
-  font-variant-numeric: tabular-nums;
 }
-.champGames{
-  font-size: 11px;
-  color: var(--muted);
-  font-weight: 900;
-  font-variant-numeric: tabular-nums;
+.sidePanel .nickHint{
+  display: none !important;
 }
+
+/* ✅ 우측 패널 닉네임 티어 색 */
+.playerNick.tier-cel{ color: var(--tier-celestial); }
+.playerNick.tier-mid{ color: var(--tier-middle); }
+.playerNick.tier-und{ color: var(--tier-underground); }
   </style>
 </head>
+
 <body>
   <div class="wrap">
-    <div class="panel">
-      <div class="topbar">
-        <div>
-          <div class="title">팀 결과</div>
-          <div class="meta" id="metaLine">불러오는 중…</div>
+    <!-- LEFT COLUMN -->
+    <div class="leftCol">
+      <div class="panel">
+        <div class="topbar">
+          <div>
+            <div class="title">팀 결과</div>
+            <div class="meta" id="metaLine">불러오는 중…</div>
+          </div>
+          <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
+            <span class="badge" id="idBadge">ID: -</span>
+            <button class="btn" id="copyBtn" style="display:none;">링크 복사</button>
+          </div>
         </div>
-        <div style="display:flex; gap:8px; align-items:center; flex-wrap:wrap;">
-          <span class="badge" id="idBadge">ID: -</span>
-          <button class="btn" id="copyBtn" style="display:none;">링크 복사</button>
-        </div>
+      </div>
+
+      <div class="panel" id="content">
+        <div class="empty">불러오는 중…</div>
       </div>
     </div>
 
-    <div class="panel" id="content">
-      <div class="empty">불러오는 중…</div>
-    </div>
+    <!-- RIGHT COLUMN -->
+    <aside class="sidePanel" id="sidePanel">
+      <div class="sideTitle">플레이어 정보</div>
+
+      <div class="sideEmpty" id="sideEmpty">
+        
+      </div>
+
+      <!-- 기존 팝업 내용 재사용 -->
+      <div id="sideBody" style="display:none;">
+        <div class="sideCloseRow">
+          <button class="btn sideCloseBtn" id="sideCloseBtn" title="닫기">닫기</button>
+        </div>
+
+        <div class="playerHead" style="padding-right:0;">
+          <div class="playerNick" id="playerPopNick">-</div>
+          <div class="playerSub">
+            <span class="pill2" id="playerPopMainLine">주력 -</span>
+            <span class="pill2" id="playerPopTier">티어 -</span>
+          </div>
+        </div>
+
+        <div class="playerGrid">
+          <div class="playerStat">
+            <div class="k">전체 승률</div>
+            <div class="v" id="playerPopWrAll">-</div>
+          </div>
+          <div class="playerStat">
+            <div class="k">최근 10 승률</div>
+            <div class="v" id="playerPopWr10">-</div>
+          </div>
+          <div class="playerStat">
+            <div class="k">표본</div>
+            <div class="v" id="playerPopGames">-</div>
+          </div>
+        </div>
+
+        <div class="playerSection">
+          <div class="playerSectionTitle">
+            <div class="t">주요 챔피언 TOP3</div>
+            <div class="hint">승률/게임수</div>
+          </div>
+          <div class="champList" id="playerPopChamps"></div>
+        </div>
+
+        <div class="playerSection">
+          <div class="playerSectionTitle">
+            <div class="t">개인 지표</div>
+            <div class="hint">게임당 평균</div>
+          </div>
+          <div class="miniStatGrid">
+            <div class="miniStat">
+              <div class="k">KDA</div>
+              <div class="v" id="playerPopAvgKda">-</div>
+            </div>
+            <div class="miniStat">
+              <div class="k">시야 점수</div>
+              <div class="v" id="playerPopAvgVision">-</div>
+            </div>
+            <div class="miniStat">
+              <div class="k">분당 데미지</div>
+              <div class="v" id="playerPopDpm">-</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </aside>
   </div>
 
   <script>
 'use strict';
 
-const resultId = "<?= resultId ?>";
+const injectedResultId = String('<?= resultId ?>' || '')
+  .trim()
+  .replace(/^"+|"+$/g, "");
+
+const qsResultId = String(new URLSearchParams(location.search).get("id") || '')
+  .trim()
+  .replace(/^"+|"+$/g, "");
+
+const resultId = injectedResultId || qsResultId;
 
 const $ = (id) => document.getElementById(id);
 
@@ -583,119 +815,13 @@ function applyTeamAvgGradient(){
   });
 }
 
-function renderTeamTable(teams, getPlayer){
-  const roles = CONFIG.ROLES;
-
-  $('content').innerHTML = `
-    <table class="teamTable">
-      <colgroup>
-        <col class="col-team">
-        ${roles.map(() => `<col class="col-slot">`).join('')}
-      </colgroup>
-      <thead>
-        <tr>
-          <th>팀</th>
-          ${roles.map(r => `<th data-role="${r}">${r}</th>`).join('')}
-        </tr>
-      </thead>
-      <tbody>
-        ${teams.map((t, i) => {
-          const st = calcStats(t, getPlayer);
-          return `
-            <tr data-team="${i}">
-              <td>
-                <div class="teamHead">
-                  <div class="teamNameBig">팀 ${esc(t.id)}</div>
-                  <div class="teamStats">
-                    <div class="teamAvgLine">
-                      <span class="teamAvgLabel">avg</span>
-                      <span class="teamAvgValue" data-avg="${Number.isFinite(st.avg) ? st.avg : ''}">
-                        ${Number.isFinite(st.avg) ? st.avg.toFixed(1) : '-'}
-                      </span>
-                    </div>
-                    <div class="teamSdLine">
-                      <span class="teamSdLabel">sd</span>
-                      <span class="teamSdValue">${Number.isFinite(st.sd) ? st.sd.toFixed(1) : '-'}</span>
-                    </div>
-                  </div>
-                </div>
-              </td>
-              ${roles.map(role => renderCell(t, role, getPlayer)).join('')}
-            </tr>
-          `;
-        }).join('')}
-      </tbody>
-    </table>
-  `;
-
-  // 규칙 위반 표시
-  const cellMap = new Map();
-  document.querySelectorAll('.teamTable td[data-team][data-role]').forEach(td => {
-    cellMap.set(`${td.dataset.team}|${td.dataset.role}`, td);
-  });
-
-  teams.forEach((t, teamIdx) => {
-    const badRoles = validateTeam(t, getPlayer);
-    badRoles.forEach(role => {
-      const td = cellMap.get(`${teamIdx}|${role}`);
-      if (td) td.classList.add('violate');
-    });
-  });
-
-  applyTeamAvgGradient();
-}
-
-function renderCell(team, role, getPlayer){
-  const nick = team.slots?.[role] || null;
-  if (!nick){
-    return `<td data-team="" data-role="" style="color:transparent">-</td>`;
-  }
-
-  const p = getPlayer(nick);
-  const baseInfo = p ? MMRCalculator.baseForDisplay(p, role) : { raw: NaN, penal: NaN, off: false };
-  const eff = p ? MMRCalculator.effective(p, role) : NaN;
-
-  const tierName = p ? MMRCalculator.tierByMMR(p.mmr) : CONFIG.TIER_NAMES.MIDDLE;
-  const tcls = Utils.tierClass(tierName);
-  const nickTierClass = (tcls === 'cel') ? 'tier-cel' : (tcls === 'und') ? 'tier-und' : 'tier-mid';
-
-  const isCaptain = team.captain && team.captain === nick;
-  const off = !!baseInfo.off;
-
-  const baseText = Number.isFinite(baseInfo.raw)
-    ? (off && baseInfo.penal !== baseInfo.raw ? `${baseInfo.raw.toFixed(0)}→${baseInfo.penal.toFixed(0)}` : `${baseInfo.raw.toFixed(0)}`)
-    : '-';
-
-  const effText = Number.isFinite(eff) ? eff.toFixed(1) : '-';
-
-  // data-team/data-role는 “규칙 위반 하이라이트”를 위해 붙임
-  // (팀별 index는 renderTeamTable에서 <tr data-team="${i}">로 이미 있고, 여기 td에 동일하게 붙여야 편함)
-  // 팀 index는 여기서 알 수 없으니, renderTeamTable에서 치환하기 귀찮아서
-  // 아래에서 td를 다시 찾기 어려움 → 간단히: renderTeamTable에서 문자열 치환 안 하고
-  // td에 data-team/data-role을 teamIdx로 넣는 게 제일 깔끔하지만,
-  // 여기서는 renderTeamTable에서 renderCell 호출할 때 teamIdx를 넘기는 방식이 더 좋음.
-  // => 아래 main에서 그 방식으로 다시 정의함.
-  return `
-    <td>
-      <div class="teamCell ${off ? 'offrole' : ''}">
-        <div class="teamNick ${nickTierClass}">
-          ${isCaptain ? '👑 ' : ''}${esc(nick)}
-        </div>
-        <div class="teamNums">
-          <div class="teamBase">${esc(baseText)}</div>
-          <div class="teamCorr"><b>${esc(effText)}</b></div>
-        </div>
-      </div>
-    </td>
-  `;
-}
-
-// renderCell을 teamIdx까지 포함하도록 “덮어쓰기”(위 설명 때문에)
-function renderCell2(teamIdx, team, role, getPlayer){
+/** ✅ 정리: renderCell2 + renderTeamTable2만 사용 */
+function renderCell(teamIdx, team, role, getPlayer){
   const nick = team.slots?.[role] || null;
   if (!nick){
     return `<td data-team="${teamIdx}" data-role="${role}" style="color:transparent">-</td>`;
   }
+
   const p = getPlayer(nick);
   const baseInfo = p ? MMRCalculator.baseForDisplay(p, role) : { raw: NaN, penal: NaN, off: false };
   const eff = p ? MMRCalculator.effective(p, role) : NaN;
@@ -716,9 +842,10 @@ function renderCell2(teamIdx, team, role, getPlayer){
   return `
     <td data-team="${teamIdx}" data-role="${role}">
       <div class="teamCell ${off ? 'offrole' : ''}">
-        <div class="teamNick ${nickTierClass}">
-          ${isCaptain ? '👑 ' : ''}${esc(nick)}
-        </div>
+          <div class="teamNick ${nickTierClass}" data-nick="${esc(nick)}" title="클릭해서 보기">
+            <span class="nickText">${isCaptain ? '👑 ' : ''}${esc(nick)}</span>
+            <span class="nickHint" aria-hidden="true">↗</span>
+          </div>
         <div class="teamNums">
           <div class="teamBase">${esc(baseText)}</div>
           <div class="teamCorr"><b>${esc(effText)}</b></div>
@@ -728,7 +855,7 @@ function renderCell2(teamIdx, team, role, getPlayer){
   `;
 }
 
-function renderTeamTable2(teams, getPlayer){
+function renderTeamTable(teams, getPlayer){
   const roles = CONFIG.ROLES;
 
   $('content').innerHTML = `
@@ -765,7 +892,7 @@ function renderTeamTable2(teams, getPlayer){
                   </div>
                 </div>
               </td>
-              ${roles.map(role => renderCell2(teamIdx, t, role, getPlayer)).join('')}
+              ${roles.map(role => renderCell(teamIdx, t, role, getPlayer)).join('')}
             </tr>
           `;
         }).join('')}
@@ -798,7 +925,9 @@ function renderTeamTable2(teams, getPlayer){
   copyBtn.style.display = 'inline-flex';
   copyBtn.addEventListener('click', async () => {
     try{
-      await navigator.clipboard.writeText(location.href);
+      await navigator.clipboard.writeText(
+    `${location.origin}${location.pathname}?page=result&id=${encodeURIComponent(resultId)}`
+  );
       copyBtn.textContent = '복사됨';
       setTimeout(() => copyBtn.textContent = '링크 복사', 1200);
     }catch(e){
@@ -828,22 +957,21 @@ function renderTeamTable2(teams, getPlayer){
         slots: t?.slots || {}
       }));
 
-      // 2) players 로드해서 index와 동일 계산 렌더
+      // 2) players 로드
       google.script.run
         .withSuccessHandler((pRes) => {
           if (!pRes || !pRes.ok) return renderError(pRes?.error || 'players load failed');
 
           const players = Array.isArray(pRes.players) ? pRes.players : [];
           const byNick = new Map(players.map(p => [p.nick, p]));
-
           const getPlayer = (nick) => byNick.get(nick) || null;
 
-          // tier 필드가 비어있을 수 있으니 여기서 보정(선택)
+          // tier 필드가 비어있을 수 있으니 보정(선택)
           players.forEach(p => {
             if (!p.tier) p.tier = MMRCalculator.tierByMMR(p.mmr);
           });
 
-          renderTeamTable2(teams, getPlayer);
+          renderTeamTable(teams, getPlayer);
           PlayerPopup.wire(getPlayer);
         })
         .withFailureHandler((err) => renderError(err?.message || String(err)))
@@ -864,100 +992,156 @@ function pct(n){
   return `${(v*100).toFixed(1)}%`;
 }
 
-// ✅ 지금은 “와꾸만”: 닉네임 → 더미 요약 데이터
-// 나중에: DB/시트 붙이면 여기만 바꾸면 됨.
-function getQuickProfileDummy(nick, getPlayer){
-  const p = getPlayer ? getPlayer(nick) : null;
+function num1(n){
+  const v = Number(n);
+  if (!Number.isFinite(v)) return '-';
+  return v.toFixed(1);
+}
 
-  // 주력라인: player.primary 우선, 없으면 ALL
-  const primary = p?.primary ? Utils.normalizePos(p.primary) : 'ALL';
+function num0(n){
+  const v = Number(n);
+  if (!Number.isFinite(v)) return '-';
+  return v.toFixed(0);
+}
 
-  // tier: p.tier가 없으면 mmr로 산출
-  const tierName = p?.mmr != null ? MMRCalculator.tierByMMR(p.mmr) : CONFIG.TIER_NAMES.MIDDLE;
+function renderProfileLoading(nick){
+  const empty = document.getElementById('sideEmpty');
+  const body = document.getElementById('sideBody');
+  if (empty) empty.style.display = 'none';
+  if (body) body.style.display = 'block';
 
-  // 아래는 더미 (나중에 실데이터로 교체)
-  const seed = Array.from(String(nick||'')).reduce((a,c)=>a + c.charCodeAt(0), 0);
-  const wrAll = ((seed % 31) + 45) / 100;     // 45%~75%
-  const wr10  = ((seed % 41) + 35) / 100;     // 35%~75%
-  const games = (seed % 400) + 60;            // 60~459
+  const nickEl = document.getElementById('playerPopNick');
+  const mainEl = document.getElementById('playerPopMainLine');
+  const tierEl = document.getElementById('playerPopTier');
+  const wrAllEl = document.getElementById('playerPopWrAll');
+  const wr10El = document.getElementById('playerPopWr10');
+  const gamesEl = document.getElementById('playerPopGames');
+  const champsEl = document.getElementById('playerPopChamps');
+  const avgKdaEl = document.getElementById('playerPopAvgKda');
+  const avgVisionEl = document.getElementById('playerPopAvgVision');
+  const dpmEl = document.getElementById('playerPopDpm');
 
-  const champs = [
-    { name: '챔피언A', wr: Math.min(0.95, wrAll + 0.08), games: Math.max(5, (seed % 60) + 10) },
-    { name: '챔피언B', wr: Math.max(0.10, wrAll - 0.03), games: Math.max(5, (seed % 50) + 8) },
-    { name: '챔피언C', wr: Math.min(0.95, wrAll + 0.02), games: Math.max(5, (seed % 40) + 6) }
-  ];
+  nickEl.textContent = nick || '-';
+  nickEl.classList.remove('tier-cel','tier-mid','tier-und');
 
-  return {
-    nick,
-    mainLine: roleLabel(primary),
-    tier: tierName,
-    wrAll,
-    wr10,
-    games,
-    champs
-  };
+  mainEl.textContent = '주포 불러오는 중…';
+  tierEl.textContent = 'MMR 불러오는 중…';
+  wrAllEl.textContent = '-';
+  wr10El.textContent = '-';
+  gamesEl.textContent = '-';
+  champsEl.innerHTML = `<div class="empty">전적 불러오는 중…</div>`;
+  if (avgKdaEl) avgKdaEl.textContent = '-';
+  if (avgVisionEl) avgVisionEl.textContent = '-';
+  if (dpmEl) dpmEl.textContent = '-';
+}
+
+function renderProfileError(nick, msg){
+  const empty = document.getElementById('sideEmpty');
+  const body = document.getElementById('sideBody');
+  if (empty) empty.style.display = 'none';
+  if (body) body.style.display = 'block';
+
+  const nickEl = document.getElementById('playerPopNick');
+  const mainEl = document.getElementById('playerPopMainLine');
+  const tierEl = document.getElementById('playerPopTier');
+  const wrAllEl = document.getElementById('playerPopWrAll');
+  const wr10El = document.getElementById('playerPopWr10');
+  const gamesEl = document.getElementById('playerPopGames');
+  const champsEl = document.getElementById('playerPopChamps');
+  const avgKdaEl = document.getElementById('playerPopAvgKda');
+  const avgVisionEl = document.getElementById('playerPopAvgVision');
+  const dpmEl = document.getElementById('playerPopDpm');
+
+  nickEl.textContent = nick || '-';
+  nickEl.classList.remove('tier-cel','tier-mid','tier-und');
+
+  mainEl.textContent = '주포 -';
+  tierEl.textContent = 'MMR -';
+  wrAllEl.textContent = '-';
+  wr10El.textContent = '-';
+  gamesEl.textContent = '-';
+  champsEl.innerHTML = `<div class="empty"><span class="err">${esc(msg || '플레이어 정보 불러오기 실패')}</span></div>`;
+  if (avgKdaEl) avgKdaEl.textContent = '-';
+  if (avgVisionEl) avgVisionEl.textContent = '-';
+  if (dpmEl) dpmEl.textContent = '-';
 }
 
 const PlayerPopup = {
   open(profile){
-    const m = document.getElementById('playerModal');
-    if (!m) return;
+  const empty = document.getElementById('sideEmpty');
+  const body = document.getElementById('sideBody');
+  if (empty) empty.style.display = 'none';
+  if (body) body.style.display = 'block';
 
-    m.classList.add('show');
-    m.setAttribute('aria-hidden', 'false');
+  const nickEl = document.getElementById('playerPopNick');
+  const mainEl = document.getElementById('playerPopMainLine');
+  const tierEl = document.getElementById('playerPopTier');
+  const wrAllEl = document.getElementById('playerPopWrAll');
+  const wr10El = document.getElementById('playerPopWr10');
+  const gamesEl = document.getElementById('playerPopGames');
+  const champsEl = document.getElementById('playerPopChamps');
+  const avgKdaEl = document.getElementById('playerPopAvgKda');
+  const avgVisionEl = document.getElementById('playerPopAvgVision');
+  const dpmEl = document.getElementById('playerPopDpm');
 
-    const nickEl = document.getElementById('playerPopNick');
-    const mainEl = document.getElementById('playerPopMainLine');
-    const tierEl = document.getElementById('playerPopTier');
-    const wrAllEl = document.getElementById('playerPopWrAll');
-    const wr10El = document.getElementById('playerPopWr10');
-    const gamesEl = document.getElementById('playerPopGames');
-    const champsEl = document.getElementById('playerPopChamps');
+nickEl.textContent = profile?.nick || '-';
 
-    nickEl.textContent = profile?.nick || '-';
-    mainEl.textContent = `주력 ${profile?.mainLine || '-'}`;
-    tierEl.textContent = `티어 ${profile?.tier || '-'}`;
 
-    wrAllEl.textContent = pct(profile?.wrAll);
-    wr10El.textContent = pct(profile?.wr10);
-    gamesEl.textContent = Number.isFinite(Number(profile?.games)) ? `${profile.games}` : '-';
+  nickEl.classList.remove('tier-cel','tier-mid','tier-und');
+  if (profile?.tierCls) nickEl.classList.add(`tier-${profile.tierCls}`);
+  mainEl.textContent = `주포 ${profile?.mainLine || '-'}`;
+  tierEl.textContent = `MMR ${Number.isFinite(profile?.mmr) ? profile.mmr.toFixed(0) : '-'}`;
 
-    const champs = Array.isArray(profile?.champs) ? profile.champs.slice(0,3) : [];
-    champsEl.innerHTML = champs.length
-      ? champs.map(c => `
-          <div class="champRow">
-            <div class="champName">${esc(c?.name || '-')}</div>
-            <div class="champMeta">
-              <span class="champWin">${pct(c?.wr)}</span>
-              <span class="champGames">${Number(c?.games)||0}G</span>
+  wrAllEl.textContent = pct(profile?.wrAll);
+  wr10El.textContent = pct(profile?.wr10);
+  gamesEl.textContent = Number.isFinite(Number(profile?.games)) ? `${profile.games}` : '-';
+
+  const champs = Array.isArray(profile?.champs) ? profile.champs.slice(0,3) : [];
+  champsEl.innerHTML = champs.length
+    ? champs.map(c => {
+        const wr = Number(c?.wr);
+        const barPct = Number.isFinite(wr)
+          ? Math.max(0, Math.min(100, wr * 100))
+          : 0;
+
+        return `
+          <div class="champRow" style="--bar-pct:${barPct.toFixed(1)}%;">
+            <div class="champBar" aria-hidden="true"></div>
+            <div class="champRowInner">
+              <div class="champName">${esc(c?.name || '-')}</div>
+              <div class="champMeta">
+                <span class="champWin">${pct(c?.wr)}</span>
+                <span class="champGames">${Number(c?.games)||0}G</span>
+              </div>
             </div>
           </div>
-        `).join('')
-      : `<div class="empty">표시할 챔프 데이터가 없음</div>`;
+        `;
+      }).join('')
+    : `<div class="empty">표시할 챔프 데이터가 없음</div>`;
+
+    
+    if (avgKdaEl) avgKdaEl.textContent = num1(profile?.avgKda);
+    if (avgVisionEl) avgVisionEl.textContent = num1(profile?.avgVision);
+    if (dpmEl) dpmEl.textContent = num0(profile?.dpm);
   },
 
   close(){
-    const m = document.getElementById('playerModal');
-    if (!m) return;
-    m.classList.remove('show');
-    m.setAttribute('aria-hidden', 'true');
+    const empty = document.getElementById('sideEmpty');
+    const body = document.getElementById('sideBody');
+    if (body) body.style.display = 'none';
+    if (empty) empty.style.display = 'block';
+
+    setActiveNick('');
   },
 
   wire(getPlayer){
-    const m = document.getElementById('playerModal');
-    const closeBtn = document.getElementById('playerCloseBtn');
-    if (!m) return;
+    const sideClose = document.getElementById('sideCloseBtn');
+    if (sideClose) sideClose.addEventListener('click', () => this.close());
 
-    // overlay close
-    m.addEventListener('click', (e) => {
-      if (e.target.closest('[data-close="1"]')) this.close();
-    });
-    if (closeBtn) closeBtn.addEventListener('click', () => this.close());
     document.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') this.close();
     });
 
-    // ✅ 팀 테이블에서 닉네임 클릭 시 오픈 (event delegation)
     const content = document.getElementById('content');
     if (!content) return;
 
@@ -965,52 +1149,41 @@ const PlayerPopup = {
       const nickEl = e.target.closest('.teamNick');
       if (!nickEl) return;
 
-      const nick = nickEl.textContent.replace('👑','').trim();
+      const nick = String(nickEl.dataset.nick || '').trim();
       if (!nick) return;
 
-      const profile = getQuickProfileDummy(nick, getPlayer);
-      this.open(profile);
+      setActiveNick(nick);
+      renderProfileLoading(nick);
+
+      google.script.run
+        .withSuccessHandler((res) => {
+          if (!res || !res.ok) {
+            return renderProfileError(nick, res?.error || '플레이어 정보 불러오기 실패');
+          }
+
+          const profile = res.profile || null;
+          if (!profile) {
+            return renderProfileError(nick, '프로필 데이터가 없습니다.');
+          }
+
+          this.open(profile);
+        })
+        .withFailureHandler((err) => {
+          renderProfileError(nick, err?.message || String(err));
+        })
+        .getPlayerProfileByNick(nick);
     });
   }
 };
-</script>
-<div class="playerModal" id="playerModal" aria-hidden="true">
-  <div class="playerOverlay" data-close="1"></div>
+function setActiveNick(nick){
+  // 기존 active 제거
+  document.querySelectorAll('.teamNick.active').forEach(el => el.classList.remove('active'));
 
-  <div class="playerPop" role="dialog" aria-modal="true" aria-label="플레이어 요약">
-    <button class="playerClose btn" id="playerCloseBtn" title="닫기">닫기</button>
+  if (!nick) return;
 
-    <div class="playerHead">
-      <div class="playerNick" id="playerPopNick">-</div>
-      <div class="playerSub">
-        <span class="pill2" id="playerPopMainLine">주력 -</span>
-        <span class="pill2" id="playerPopTier">티어 -</span>
-      </div>
-    </div>
-
-    <div class="playerGrid">
-      <div class="playerStat">
-        <div class="k">전체 승률</div>
-        <div class="v" id="playerPopWrAll">-</div>
-      </div>
-      <div class="playerStat">
-        <div class="k">최근 10 승률</div>
-        <div class="v" id="playerPopWr10">-</div>
-      </div>
-      <div class="playerStat">
-        <div class="k">표본</div>
-        <div class="v" id="playerPopGames">-</div>
-      </div>
-    </div>
-
-    <div class="playerSection">
-      <div class="playerSectionTitle">
-        <div class="t">주요 챔피언 TOP3</div>
-        <div class="hint">승률/게임수</div>
-      </div>
-      <div class="champList" id="playerPopChamps"></div>
-    </div>
-  </div>
-</div>
+  document.querySelectorAll(`.teamNick[data-nick="${CSS.escape(nick)}"]`)
+    .forEach(el => el.classList.add('active'));
+}
+  </script>
 </body>
 </html>
