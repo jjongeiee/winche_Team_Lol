@@ -1083,6 +1083,7 @@ select {
           <button id="selectCaptainBtn" class="xbtn" style="display:none;">팀장 뽑기 🎲</button>
           <button id="copyTeamsBtn" class="xbtn" style="display:none;">클립보드에 복사 📋</button>
           <button id="resultLinkBtn" class="xbtn" style="display:none;">결과 링크 🔗</button>
+          <button id="auctionBtn" class="xbtn">경매 시작 💰</button>
           <div class="meta status" id="teamMetaLine">-</div>
         </div>
         <div id="teamBoard"></div>
@@ -1605,7 +1606,7 @@ const UI = {
       redoBtn: $('#redoBtn'),
       fortuneArea: $('#fortuneArea'),
       syncBtn: $('#syncBtn'),
-
+      auctionBtn: $('#auctionBtn'),
     };
   },
   
@@ -2954,6 +2955,44 @@ if (UI.dom.syncBtn) {
     UI.dom.confirmTeamBtn.addEventListener('click', () => TeamActions.confirm());
     UI.dom.selectCaptainBtn.addEventListener('click', () => TeamActions.selectCaptains());
     UI.dom.copyTeamsBtn.addEventListener('click', () => TeamActions.copyToClipboard());
+    if (UI.dom.auctionBtn) {
+    UI.dom.auctionBtn.addEventListener('click', () => {
+
+      if (!State.resultId) {
+        UI.showToast('결과 링크를 먼저 생성하세요', 1600, 'warn');
+        return;
+      }
+
+      UI.showToast('경매 세션 생성중...',1200,'info');
+
+      google.script.run
+      .withSuccessHandler((res)=>{
+
+          if(!res || !res.ok){
+            UI.showToast('경매 생성 실패',2000,'error')
+            return
+          }
+
+          const auctionId = res.auctionId
+
+          const u = new URL(window.location.href)
+          u.search=''
+          u.hash=''
+          u.searchParams.set('page','auction')
+          u.searchParams.set('id',auctionId)
+
+          window.open(u.toString(), '_blank','noopener')
+
+      })
+      .withFailureHandler((err)=>{
+
+          UI.showToast('경매 생성 오류: '+err.message,2500,'error')
+
+      })
+      .createAuctionSession(State.resultId)
+
+    });
+  }
     if (UI.dom.undoBtn) UI.dom.undoBtn.addEventListener('click', () => HistoryManager.undo());
     if (UI.dom.redoBtn) UI.dom.redoBtn.addEventListener('click', () => HistoryManager.redo());
 
