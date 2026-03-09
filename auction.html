@@ -1,0 +1,105 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<title>경매</title>
+<style>
+
+body{
+background:#0b0f14;
+color:white;
+font-family:pretendard;
+text-align:center;
+}
+
+.box{
+margin-top:60px;
+}
+
+input{
+padding:10px;
+font-size:18px;
+}
+
+button{
+padding:10px 20px;
+font-size:18px;
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="box">
+
+<h2>경매 참여</h2>
+
+<input id="nickInput" placeholder="닉네임">
+
+<button id="joinBtn">참여</button>
+
+</div>
+
+<div id="auctionUI" style="display:none">
+
+<h2 id="playerName"></h2>
+
+<div id="timer"></div>
+
+<input id="bidInput" type="number">
+
+<button id="bidBtn">입찰</button>
+
+<div id="topBid"></div>
+
+</div>
+
+<script>
+
+const params = new URLSearchParams(location.search)
+const auctionId = params.get("id")
+
+let myNick=null
+
+document.getElementById("joinBtn").onclick = () => {
+
+  const nick = document.getElementById("nickInput").value.trim()
+
+  if(!nick){
+    alert("닉네임을 입력하세요")
+    return
+  }
+
+  if(!auctionId){
+    alert("auctionId가 없습니다. 페이지를 다시 여세요.")
+    return
+  }
+
+  if(!window.google || !google.script || !google.script.run){
+    alert("Apps Script 환경이 아닙니다.")
+    return
+  }
+
+  google.script.run
+  .withSuccessHandler(()=>{
+
+      myNick = nick
+
+      document.querySelector(".box").style.display="none"
+      document.getElementById("auctionUI").style.display="block"
+
+  })
+  .withFailureHandler((err)=>{
+
+      alert("참여 실패: " + err.message)
+
+  })
+  .joinAuction(auctionId, nick)
+
+}
+
+</script>
+
+</body>
+</html>
