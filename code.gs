@@ -14,6 +14,17 @@ const CONFIG = {
   }
 };
 
+const AUCTION = {
+  SESSION_SHEET: 'AuctionSessions',
+  TARGET_SHEET: 'AuctionTargets',
+  PARTICIPANT_SHEET: 'AuctionParticipants',
+  BID_SHEET: 'AuctionBids'
+};
+
+const AUCTION_ROUND = {
+  DURATION_MS: 7700
+};
+
 // ====== TEAM RESULT STORAGE ======
 const TEAM_RESULT = {
   SHEET_NAME: '팀결과',
@@ -211,14 +222,22 @@ function doGet(e) {
   const page = (e && e.parameter && e.parameter.page) || 'index';
 
   if (page === 'result') {
-    const t = HtmlService.createTemplateFromFile('result'); // 나중에 만들 파일
+    const t = HtmlService.createTemplateFromFile('result');
     t.resultId = (e && e.parameter && e.parameter.id) || '';
     return t.evaluate()
       .setTitle('팀 결과')
       .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
   }
 
-  // 기본 index
+  // 🔹 경매 페이지
+  if (page === 'auction') {
+    const t = HtmlService.createTemplateFromFile('auction');
+    t.resultId = (e && e.parameter && e.parameter.id) || '';
+    return t.evaluate()
+      .setTitle('경매')
+      .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
+  }
+
   return HtmlService.createHtmlOutputFromFile('index')
     .setTitle('내전 팀 밸런싱')
     .setXFrameOptionsMode(HtmlService.XFrameOptionsMode.ALLOWALL);
@@ -324,6 +343,30 @@ const FORTUNE2_CONFIG = {
   SHEET_NAME: '팀별운세',
   START_ROW: 2,   // 헤더 있으면 2로
   COLS: { TOP: 1, BOTTOM: 2, GRADE: 3 } // A,B,C
+};
+
+// ====== MATCH DB ======
+const MATCH_DB = {
+  SHEET_NAME: 'DB',
+  HEADER_ROW: 1,
+  START_ROW: 2,
+  REQUIRED_HEADERS: [
+    'match_id',
+    '닉네임',
+    '픽',
+    '진영',
+    '포지션',
+    '승/패',
+    'Kill',
+    'Death',
+    'Assist',
+    'CS',
+    '골드',
+    '데미지',
+    '시야점수',
+    '플레이 시간',
+    '플레이 시간 변환'
+  ]
 };
 
 function getTeamFortunePool() {
@@ -471,12 +514,857 @@ function drawTeamFortunesByRules(teamCount) {
   }
 }
 
-// ✅ (중요) 결과 페이지가 이 함수를 호출할 가능성이 높아서,
-// 스텁(TODO)로 두면 링크 페이지가 무조건 실패함.
 function getTeamResult(resultId) {
-  // 기존에 구현해둔 시트조회 로직 재사용
+  
   return getTeamResultById(resultId);
 }
 
+/**
+ * DB 탭의 전적 데이터를 헤더 기준으로 읽어서 객체 배열로 반환
+ * - 헤더명 기준으로 읽기 때문에 열 순서가 바뀌어도 비교적 안전
+ * - 빈 닉네임 행은 건너뜀
+ */
+function getMatchDbRows() {
+  try {
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss?.getSheetByName(MATCH_DB.SHEET_NAME);
+    if (!sh) throw new Error(`시트 "${MATCH_DB.SHEET_NAME}"를 찾을 수 없습니다.`);
+
+    const lastRow = sh.getLastRow();
+    const lastCol = sh.getLastColumn();
+
+    if (lastRow < MATCH_DB.START_ROW) {
+      return {
+        ok: true,
+        rows: [],
+        meta: { count: 0, sheet: MATCH_DB.SHEET_NAME }
+      };
+    }
+
+    const headers = sh
+      .getRange(MATCH_DB.HEADER_ROW, 1, 1, lastCol)
+      .getValues()[0]
+      .map(h => _asString(h));
+
+    const headerMap = _makeHeaderMap_(headers);
+
+    // 필수 헤더 검사
+    const missing = MATCH_DB.REQUIRED_HEADERS.filter(h => !(h in headerMap));
+    if (missing.length) {
+      throw new Error(`DB 헤더 누락: ${missing.join(', ')}`);
+    }
+
+    const numRows = lastRow - MATCH_DB.START_ROW + 1;
+    const values = sh.getRange(MATCH_DB.START_ROW, 1, numRows, lastCol).getValues();
+
+    const rows = [];
+
+    for (let i = 0; i < values.length; i++) {
+      const row = values[i];
+
+      const nick = _asString(row[headerMap['닉네임']]);
+      if (!nick) continue;
+
+      rows.push({
+        matchId: _asString(row[headerMap['match_id']]),
+        nick,
+        champ: _asString(row[headerMap['픽']]),
+        side: _asString(row[headerMap['진영']]),
+        position: _normalizePos(row[headerMap['포지션']]),
+        result: _asString(row[headerMap['승/패']]),
+        kill: _asNumber(row[headerMap['Kill']]) ?? 0,
+        death: _asNumber(row[headerMap['Death']]) ?? 0,
+        assist: _asNumber(row[headerMap['Assist']]) ?? 0,
+        cs: _asNumber(row[headerMap['CS']]),
+        gold: _asNumber(row[headerMap['골드']]),
+        damage: _asNumber(row[headerMap['데미지']]),
+        vision: _asNumber(row[headerMap['시야점수']]),
+        playTimeRaw: _asString(row[headerMap['플레이 시간']]),
+        playTimeText: _asString(row[headerMap['플레이 시간 변환']]),
+        _rowNumber: MATCH_DB.START_ROW + i
+      });
+    }
+
+    return {
+      ok: true,
+      rows,
+      meta: {
+        count: rows.length,
+        sheet: MATCH_DB.SHEET_NAME
+      }
+    };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+/**
+ * 특정 닉네임의 전적만 가져오기
+ * - match_id 최신순 정렬
+ */
+function getMatchDbRowsByNick(nick) {
+  try {
+    const targetNick = _asString(nick);
+    if (!targetNick) throw new Error('nick이 비어있습니다.');
+
+    const res = getMatchDbRows();
+    if (!res.ok) throw new Error(res.error || 'DB 읽기 실패');
+
+    const rows = res.rows
+      .filter(r => r.nick === targetNick)
+      .sort((a, b) => String(b.matchId).localeCompare(String(a.matchId)));
+
+    return {
+      ok: true,
+      nick: targetNick,
+      rows,
+      meta: {
+        count: rows.length,
+        sheet: MATCH_DB.SHEET_NAME
+      }
+    };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+/**
+ * 특정 닉네임의 우측 패널용 프로필 집계
+ * - MMR/티어/주포는 기존 getPlayers() 결과를 우선 사용
+ * - 승률/최근10/챔프TOP3/KDA 등은 DB 전적으로 계산
+ */
+function getPlayerProfileByNick(nick) {
+  try {
+    const targetNick = _asString(nick);
+    if (!targetNick) throw new Error('nick이 비어있습니다.');
+
+    // 1) 기본 플레이어 정보(MMR/티어/주포)
+    const playersRes = getPlayers();
+    if (!playersRes || !playersRes.ok) {
+      throw new Error(playersRes?.error || '플레이어 기본정보 불러오기 실패');
+    }
+
+    const player = (playersRes.players || []).find(p => _asString(p.nick) === targetNick) || null;
+
+    // 2) 전적 정보
+    const matchRes = getMatchDbRowsByNick(targetNick);
+    if (!matchRes || !matchRes.ok) {
+      throw new Error(matchRes?.error || '전적 불러오기 실패');
+    }
+
+    const rows = Array.isArray(matchRes.rows) ? matchRes.rows : [];
+    const games = rows.length;
+
+    // 전적이 하나도 없더라도 기본 프로필은 내려주도록 처리
+    const wrAll = _calcWinRate_(rows);
+    const wr10 = _calcWinRate_(rows.slice(0, 10));
+    const mainPosFromDb = _calcMainPosition_(rows);
+    const champs = _calcTopChamps_(rows, 3);
+    const kda = _calcAverageKda_(rows);
+    const avgVision = _calcAverageVision_(rows);
+    const dpm = _calcAverageDpm_(rows);
+
+    const mmr = player?.mmr ?? null;
+    const tierName = player?.tier || (mmr !== null ? _tierByMMR(mmr) : '중간계');
+    const tierCls = _tierClass_(tierName);
+
+    return {
+      ok: true,
+      profile: {
+        nick: targetNick,
+        mainLine: _roleLabel(player?.primary || mainPosFromDb || 'ALL'),
+        mmr,
+        tierName,
+        tierCls,
+        wrAll,
+        wr10,
+        games,
+        champs,
+        avgKda: kda.avgKda,
+        avgKill: kda.avgKill,
+        avgDeath: kda.avgDeath,
+        avgAssist: kda.avgAssist,
+        avgVision,
+        dpm
+      },
+      meta: {
+        matchCount: games,
+        hasPlayerBase: !!player
+      }
+    };
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+function _makeHeaderMap_(headers) {
+  const map = {};
+  headers.forEach((name, idx) => {
+    const key = _asString(name);
+    if (key) map[key] = idx;
+  });
+  return map;
+}
+
+function _calcWinRate_(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) return null;
+
+  let wins = 0;
+  for (let i = 0; i < list.length; i++) {
+    if (_isWin_(list[i]?.result)) wins++;
+  }
+  return wins / list.length; // 0~1 소수
+}
+
+function _isWin_(result) {
+  const v = _asString(result);
+  return v === '승' || v.toUpperCase() === 'WIN';
+}
+
+function _calcMainPosition_(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) return 'ALL';
+
+  const counts = {};
+  for (let i = 0; i < list.length; i++) {
+    const pos = _normalizePos(list[i]?.position);
+    if (!pos) continue;
+    counts[pos] = (counts[pos] || 0) + 1;
+  }
+
+  const ordered = Object.entries(counts)
+    .sort((a, b) => {
+      if (b[1] !== a[1]) return b[1] - a[1];
+      return _positionOrderValue_(a[0]) - _positionOrderValue_(b[0]);
+    });
+
+  return ordered.length ? ordered[0][0] : 'ALL';
+}
+
+function _calcTopChamps_(rows, limit) {
+  const list = Array.isArray(rows) ? rows : [];
+  const champMap = new Map();
+
+  for (let i = 0; i < list.length; i++) {
+    const row = list[i];
+    const champ = _asString(row?.champ);
+    if (!champ) continue;
+
+    if (!champMap.has(champ)) {
+      champMap.set(champ, { name: champ, wins: 0, games: 0 });
+    }
+
+    const item = champMap.get(champ);
+    item.games += 1;
+    if (_isWin_(row?.result)) item.wins += 1;
+  }
+
+  return Array.from(champMap.values())
+    .sort((a, b) => {
+      if (b.games !== a.games) return b.games - a.games;
+      const aWr = a.games ? a.wins / a.games : 0;
+      const bWr = b.games ? b.wins / b.games : 0;
+      if (bWr !== aWr) return bWr - aWr;
+      return a.name.localeCompare(b.name, 'ko');
+    })
+    .slice(0, limit || 3)
+    .map(x => ({
+      name: x.name,
+      wr: x.games ? x.wins / x.games : null,
+      games: x.games
+    }));
+}
+
+function _calcAverageKda_(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  if (!list.length) {
+    return {
+      avgKill: null,
+      avgDeath: null,
+      avgAssist: null,
+      avgKda: null
+    };
+  }
+
+  let sumK = 0;
+  let sumD = 0;
+  let sumA = 0;
+
+  for (let i = 0; i < list.length; i++) {
+    sumK += _asNumber(list[i]?.kill) ?? 0;
+    sumD += _asNumber(list[i]?.death) ?? 0;
+    sumA += _asNumber(list[i]?.assist) ?? 0;
+  }
+
+  const n = list.length;
+  const avgKill = sumK / n;
+  const avgDeath = sumD / n;
+  const avgAssist = sumA / n;
+  const avgKda = (avgKill + avgAssist) / Math.max(avgDeath, 1);
+
+  return {
+    avgKill,
+    avgDeath,
+    avgAssist,
+    avgKda
+  };
+}
+
+function _calcAverageVision_(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  let sum = 0;
+  let count = 0;
+
+  for (let i = 0; i < list.length; i++) {
+    const v = _asNumber(list[i]?.vision);
+    if (v === null) continue; // 빈값은 제외
+    sum += v;
+    count += 1;
+  }
+
+  return count > 0 ? (sum / count) : null;
+}
+
+function _calcAverageDpm_(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  let sum = 0;
+  let count = 0;
+
+  for (let i = 0; i < list.length; i++) {
+    const damage = _asNumber(list[i]?.damage);
+    if (damage === null) continue; // 데미지 빈값은 제외
+
+    const minutes = _playTimeTextToMinutes_(list[i]?.playTimeText);
+    if (!Number.isFinite(minutes) || minutes <= 0) continue;
+
+    sum += (damage / minutes);
+    count += 1;
+  }
+
+  return count > 0 ? (sum / count) : null;
+}
+
+function _playTimeTextToMinutes_(text) {
+  const raw = _asString(text);
+  if (!raw) return null;
+
+  const m = raw.match(/^(\d+):(\d{1,2})$/);
+  if (!m) return null;
+
+  const mm = Number(m[1]);
+  const ss = Number(m[2]);
+  if (!Number.isFinite(mm) || !Number.isFinite(ss)) return null;
+
+  return mm + (ss / 60);
+}
+
+function _tierClass_(tierName) {
+  const v = _asString(tierName);
+  if (v === '천상계') return 'cel';
+  if (v === '지하계') return 'und';
+  return 'mid';
+}
+
+function _roleLabel(role) {
+  const v = _normalizePos(role);
+  const map = {
+    TOP: '탑',
+    JUG: '정글',
+    MID: '미드',
+    ADC: '원딜',
+    SUP: '서포터',
+    ALL: '올라운더'
+  };
+  return map[v] || '올라운더';
+}
+
+function _positionOrderValue_(pos) {
+  const map = {
+    TOP: 1,
+    JUG: 2,
+    MID: 3,
+    ADC: 4,
+    SUP: 5,
+    ALL: 99
+  };
+  return map[_normalizePos(pos)] || 999;
+}
+
+/* =========================================================
+   AUCTION: resultId → 경매 대상 플레이어 목록 생성
+   ========================================================= */
+
+function getAuctionPlayersFromResult(resultId) {
+  try {
+    const res = getTeamResultById(resultId);
+    if (!res || !res.ok) {
+      throw new Error(res?.error || '팀결과 조회 실패');
+    }
+
+    const payload = res.payload;
+    if (!payload || !Array.isArray(payload.teams)) {
+      throw new Error('팀 데이터가 없습니다.');
+    }
+
+    const players = [];
+
+    payload.teams.forEach(team => {
+      const teamId = team.id ?? null;
+      const slots = team.slots || {};
+
+      Object.keys(slots).forEach(role => {
+        const nick = _asString(slots[role]);
+        if (!nick) return;
+
+        players.push({
+          nick,
+          teamId,
+          role
+        });
+      });
+    });
+
+    if (!players.length) {
+      throw new Error('플레이어 목록이 비어 있습니다.');
+    }
+
+    // 랜덤 순서 생성
+    const shuffled = _shuffleArray_(players).map((p, i) => ({
+      ...p,
+      orderNo: i + 1
+    }));
+
+    return {
+      ok: true,
+      resultId,
+      players: shuffled,
+      meta: {
+        count: shuffled.length
+      }
+    };
+
+  } catch (err) {
+    return { ok: false, error: err?.message || String(err) };
+  }
+}
+
+/* =========================================================
+   HELPER: 배열 랜덤 셔플
+   ========================================================= */
+
+function _shuffleArray_(arr) {
+  const a = arr.slice();
+  for (let i = a.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    const t = a[i];
+    a[i] = a[j];
+    a[j] = t;
+  }
+  return a;
+}
+
+function createAuctionSession(resultId) {
+  try {
+
+    const playersRes = getAuctionPlayersFromResult(resultId);
+    if (!playersRes.ok) throw new Error(playersRes.error);
+
+    const players = playersRes.players;
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sessionSh = ss.getSheetByName(AUCTION.SESSION_SHEET);
+    const targetSh = ss.getSheetByName(AUCTION.TARGET_SHEET);
+
+    if (!sessionSh) throw new Error('AuctionSessions 시트 없음');
+    if (!targetSh) throw new Error('AuctionTargets 시트 없음');
+
+    const auctionId = _newAuctionId_();
+
+    // 세션 저장
+    sessionSh.appendRow([
+      auctionId,
+      resultId,
+      'waiting',
+      new Date(),
+      1
+    ]);
+
+    // 플레이어 저장
+    const rows = players.map(p => [
+      auctionId,
+      p.orderNo,
+      p.nick,
+      p.teamId,
+      p.role,
+      ''
+    ]);
+
+    targetSh.getRange(
+      targetSh.getLastRow() + 1,
+      1,
+      rows.length,
+      rows[0].length
+    ).setValues(rows);
+
+    return {
+      ok: true,
+      auctionId,
+      playerCount: rows.length
+    };
+
+  } catch (err) {
+    return { ok:false, error: err.message };
+  }
+}
+
+function _newAuctionId_() {
+  const now = new Date();
+  const ts = Utilities.formatDate(now,'Asia/Seoul','yyyyMMdd_HHmmss');
+  const rand = Math.random().toString(36).slice(2,5);
+  return `auction_${ts}_${rand}`;
+}
+
+function startAuctionRound(auctionId, orderNo, roundNo) {
+
+  const endTime = Date.now() + AUCTION_ROUND.DURATION_MS;
+
+  const cache = CacheService.getScriptCache();
+
+  cache.put(
+    `auction_round_${auctionId}`,
+    JSON.stringify({
+      orderNo,
+      roundNo,
+      endTime
+    }),
+    30
+  );
+
+  return {
+    ok:true,
+    orderNo,
+    roundNo,
+    endTime
+  };
+}
+
+function submitBid(auctionId, bidderCode, amount) {
+  try {
+
+    const cache = CacheService.getScriptCache();
+    const stateRaw = cache.get(`auction_round_${auctionId}`);
+    if (!stateRaw) throw new Error('라운드 없음');
+
+    const state = JSON.parse(stateRaw);
+
+    const bidAmount = Number(amount);
+    if (!Number.isFinite(bidAmount) || bidAmount < 0) {
+      throw new Error('입찰 금액 오류');
+    }
+
+    // 이전 최고가 조회
+    const prevMax = _getRoundMaxBid_(auctionId, state.orderNo, state.roundNo);
+
+    if (prevMax !== null && bidAmount < prevMax) {
+      throw new Error(`최소 입찰가: ${prevMax}`);
+    }
+
+    if (Date.now() > state.endTime) {
+      throw new Error('입찰 마감');
+    }
+
+    // 🔴 여기 추가: 사용자 포인트 확인
+    const userRes = getAuctionUser(auctionId, bidderCode);
+
+    if (!userRes.ok) {
+      throw new Error('참가자 등록 안됨');
+    }
+
+    if (bidAmount > userRes.points) {
+      throw new Error('포인트 부족');
+    }
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName(AUCTION.BID_SHEET);
+
+    sh.appendRow([
+      auctionId,
+      state.orderNo,
+      state.roundNo,
+      bidderCode,
+      bidAmount,
+      new Date()
+    ]);
+
+    return { ok:true };
+
+  } catch(err) {
+    return { ok:false, error:err.message };
+  }
+}
+
+function finishAuctionRound(auctionId) {
+
+  const cache = CacheService.getScriptCache();
+  const stateRaw = cache.get(`auction_round_${auctionId}`);
+  if (!stateRaw) return { ok:false, error:'라운드 없음' };
+
+  const state = JSON.parse(stateRaw);
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(AUCTION.BID_SHEET);
+
+  const values = sh.getDataRange().getValues();
+
+  const bids = values
+    .filter(r =>
+      r[0] === auctionId &&
+      r[1] === state.orderNo &&
+      r[2] === state.roundNo
+    );
+
+  if (!bids.length) {
+    return { ok:true, result:'no_bid' };
+  }
+
+  const latest = {};
+
+  bids.forEach(b => {
+    latest[b[3]] = Number(b[4]);
+  });
+
+  const entries = Object.entries(latest);
+
+  entries.sort((a,b)=>b[1]-a[1]);
+
+  const max = entries[0][1];
+  const winners = entries.filter(e=>e[1]===max);
+
+  if (winners.length === 1) {
+
+    return {
+      ok:true,
+      result:'win',
+      bidder:winners[0][0],
+      amount:max
+    };
+
+  }
+
+  return {
+    ok:true,
+    result:'tie',
+    bidders:winners.map(w=>w[0])
+  };
+}
+
+/* =========================================================
+   AUCTION STATE 조회
+   ========================================================= */
+
+function getAuctionState(auctionId) {
+
+  try {
+
+    const cache = CacheService.getScriptCache();
+    const stateRaw = cache.get(`auction_round_${auctionId}`);
+
+    if (!stateRaw) {
+      return {
+        ok: true,
+        running: false
+      };
+    }
+
+    const state = JSON.parse(stateRaw);
+
+    const now = Date.now();
+    const remain = Math.max(0, state.endTime - now);
+
+    return {
+      ok: true,
+      running: true,
+      orderNo: state.orderNo,
+      roundNo: state.roundNo,
+      remainMs: remain
+    };
+
+  } catch (err) {
+
+    return {
+      ok: false,
+      error: err.message
+    };
+
+  }
+
+}
 
 
+/* =========================================================
+   현재 경매 대상 플레이어 조회
+   ========================================================= */
+
+function getAuctionCurrentTarget(auctionId) {
+
+  try {
+
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sh = ss.getSheetByName(AUCTION.TARGET_SHEET);
+
+    if (!sh) throw new Error('AuctionTargets 시트 없음');
+
+    const values = sh.getDataRange().getValues();
+
+    const sessionRes = _getAuctionSession_(auctionId);
+
+    if (!sessionRes) throw new Error('세션 없음');
+
+    const orderNo = sessionRes.currentIndex;
+
+    const row = values.find(r =>
+      r[0] === auctionId &&
+      Number(r[1]) === Number(orderNo)
+    );
+
+    if (!row) {
+      return { ok:false, error:'플레이어 없음' };
+    }
+
+    return {
+      ok:true,
+      orderNo,
+      player: {
+        nick: row[2],
+        teamId: row[3],
+        role: row[4]
+      }
+    };
+
+  } catch(err) {
+
+    return { ok:false, error:err.message };
+
+  }
+
+}
+
+
+/* =========================================================
+   경매 세션 조회
+   ========================================================= */
+
+function _getAuctionSession_(auctionId) {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(AUCTION.SESSION_SHEET);
+
+  if (!sh) return null;
+
+  const values = sh.getDataRange().getValues();
+
+  for (let i = 1; i < values.length; i++) {
+
+    if (values[i][0] === auctionId) {
+
+      return {
+        row: i + 1,
+        resultId: values[i][1],
+        status: values[i][2],
+        createdAt: values[i][3],
+        currentIndex: values[i][4]
+      };
+
+    }
+
+  }
+
+  return null;
+
+}
+
+function _getRoundMaxBid_(auctionId, orderNo, roundNo) {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName(AUCTION.BID_SHEET);
+
+  if (!sh) return null;
+
+  const values = sh.getDataRange().getValues();
+
+  let max = null;
+
+  for (let i = 1; i < values.length; i++) {
+
+    if (
+      values[i][0] === auctionId &&
+      Number(values[i][1]) === Number(orderNo) &&
+      Number(values[i][2]) === Number(roundNo)
+    ) {
+
+      const amount = Number(values[i][4]);
+
+      if (max === null || amount > max) {
+        max = amount;
+      }
+
+    }
+
+  }
+
+  return max;
+
+}
+
+function joinAuction(auctionId, nick) {
+
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const sh = ss.getSheetByName("AuctionUsers");
+
+  if (!sh) throw new Error("AuctionUsers 시트 없음");
+
+  const values = sh.getDataRange().getValues();
+
+  for (let i=1;i<values.length;i++){
+
+    if(values[i][0]===auctionId && values[i][1]===nick){
+      return {ok:true};
+    }
+
+  }
+
+  sh.appendRow([
+    auctionId,
+    nick,
+    0,
+    new Date()
+  ]);
+
+  return {ok:true};
+}
+
+function getAuctionUser(auctionId,nick){
+
+  const ss=SpreadsheetApp.getActiveSpreadsheet();
+  const sh=ss.getSheetByName("AuctionUsers");
+
+  const values=sh.getDataRange().getValues();
+
+  for(let i=1;i<values.length;i++){
+
+    if(values[i][0]===auctionId && values[i][1]===nick){
+
+      return{
+        ok:true,
+        nick:nick,
+        points:Number(values[i][2])
+      }
+
+    }
+
+  }
+
+  return{ok:false}
+
+}
